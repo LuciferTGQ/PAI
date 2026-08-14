@@ -31,9 +31,28 @@ G:\PAI\.venv\Scripts\python.exe scripts\evaluate_world_model.py --config configs
 
 The training script writes the best checkpoint and training curve. The evaluation script writes one-step metrics, multi-step metrics, and the required figures.
 
+## Train the official BC baseline
+
+```powershell
+G:\PAI\.venv\Scripts\python.exe scripts\train_official_bc.py --config configs\official_bc_ib_m100.yaml
+```
+
+The compatibility layer is restricted to the audited BC path at OfflineRL
+commit `807933a87f77529f17bd81ac64d717aad89f5cdf`; official third-party files
+remain unchanged.
+
+## Evaluate the frozen-model strategy
+
+```powershell
+G:\PAI\.venv\Scripts\python.exe scripts\evaluate_strategy.py --config configs\strategy_ib_m100.yaml
+```
+
+This evaluates the released behavior data as an offline reference, the BC
+policy online, and receding-horizon CEM against the frozen Temporal Transformer.
+See `docs/SMOKE_RESULTS.md` for the M-100 results and comparison caveats.
+
 ## Authoritative external sources
 
 - NeoRL main repository: `https://github.com/Polixir/NeoRL`, fixed locally at `717c9a92d5253876f8cb28318ef72e3d5ab05968`.
 - NeoRL OfflineRL submodule: fixed at `807933a87f77529f17bd81ac64d717aad89f5cdf`.
 - Local task and paper files remain unchanged in the repository root.
-
