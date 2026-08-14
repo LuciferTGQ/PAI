@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from src.data.ib_dataset import NormalizationStats
-from src.world_model.model import TemporalTransformer
+from src.world_model.model import build_world_model
 
 
 class FrozenWorldModel:
@@ -19,7 +19,7 @@ class FrozenWorldModel:
         checkpoint = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
         self.model_config = checkpoint["model_config"]
         self.stats = NormalizationStats.from_dict(checkpoint["normalization"])
-        self.model = TemporalTransformer(**self.model_config).to(self.device)
+        self.model = build_world_model(self.model_config).to(self.device)
         self.model.load_state_dict(checkpoint["model_state"])
         self.model.eval()
         for parameter in self.model.parameters():
@@ -81,4 +81,3 @@ class FrozenWorldModel:
         history = np.asarray(history, dtype=np.float32).reshape(self.obs_dim)
         next_frame = np.asarray(next_frame, dtype=np.float32).reshape(self.frame_dim)
         return np.concatenate((next_frame, history[:-self.frame_dim]))
-

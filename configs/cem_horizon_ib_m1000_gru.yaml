@@ -1,0 +1,28 @@
+seed: 42
+
+policies:
+  official_bc_checkpoint: outputs/checkpoints/official_bc_ib_m1000.pt
+  world_model_checkpoint: outputs/checkpoints/world_model_ib_m1000_gru_best.pt
+  device: cuda
+
+cem:
+  horizons: [5, 10, 20]
+  population: 64
+  elites: 8
+  iterations: 2
+  initial_std: 0.35
+  min_std: 0.05
+  action_low: [-1.0, -1.0, -1.0]
+  action_high: [1.0, 1.0, 1.0]
+
+evaluation:
+  role: development_horizon_selection
+  seeds: [42, 43, 44, 45, 46]
+  held_out_seeds: [47, 48, 49, 50, 51]
+  episode_horizon: 1000
+  selection_rule: one_standard_error_shortest
+
+outputs:
+  metrics_json: outputs/metrics/strategy_ib_m1000_gru_cem_horizons.json
+  episode_csv: outputs/metrics/strategy_ib_m1000_gru_cem_horizons_episodes.csv
+  comparison_figure: outputs/figures/strategy_ib_m1000_gru_cem_horizons.png

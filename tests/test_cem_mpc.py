@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.evaluation.cem_horizon import select_horizon_one_standard_error
 from src.strategy.cem_mpc import CEMMPCPolicy, ib_reward_from_frame
 
 
@@ -39,3 +40,16 @@ def test_cem_action_is_bounded_and_improves_fake_cost() -> None:
     assert np.all(action >= -1.0) and np.all(action <= 1.0)
     assert action[0] < -0.5
     assert action[1] < -0.5
+
+
+def test_one_standard_error_horizon_selection_prefers_shorter_candidate() -> None:
+    selection = select_horizon_one_standard_error(
+        {
+            5: [-100.5, -98.5, -99.5],
+            10: [-100.0, -98.0, -99.0],
+            20: [-103.0, -101.0, -102.0],
+        }
+    )
+    assert selection["best_mean_horizon"] == 10
+    assert selection["eligible_horizons"] == [5, 10]
+    assert selection["selected_horizon"] == 5

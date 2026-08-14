@@ -1,0 +1,34 @@
+seed: 42
+
+data:
+  train_path: data/raw/ib-medium-1000-train.npz
+  val_path: data/raw/ib-medium-100-val.npz
+  history_len: 30
+  frame_dim: 6
+  action_dim: 3
+
+model:
+  type: gru
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.1
+  action_hidden_dim: 64
+  head_hidden_dim: 128
+
+training:
+  device: cuda
+  batch_size: 512
+  epochs: 50
+  learning_rate: 0.0003
+  weight_decay: 0.00001
+  gradient_clip: 1.0
+  num_workers: 0
+  mixed_precision: true
+  patience: 50
+  checkpoint_interval: 5
+
+outputs:
+  checkpoint: outputs/checkpoints/world_model_ib_m1000_gru_best.pt
+  last_checkpoint: outputs/checkpoints/world_model_ib_m1000_gru_last.pt
+  training_history_csv: outputs/metrics/world_model_ib_m1000_gru_training.csv
+  training_curve: outputs/figures/world_model_ib_m1000_gru_training.png
