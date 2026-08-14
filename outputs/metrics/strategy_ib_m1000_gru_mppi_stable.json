@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "role": "development_mppi_stability_correction",
+    "world_model_checkpoint": "G:\\PAI\\outputs\\checkpoints\\world_model_ib_m1000_gru_best.pt",
+    "world_model_frozen": true,
+    "development_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "held_out_seeds_reserved": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "episode_horizon": 1000,
+    "diagnostic_basis": "first-state ESS increased from 2.6 to 18.5 of 128",
+    "mppi": {
+      "horizon": 10,
+      "population": 128,
+      "elites": 8,
+      "iterations": 1,
+      "initial_std": 0.35,
+      "min_std": 0.05,
+      "noise_std": [
+        0.35,
+        0.35,
+        0.35
+      ],
+      "temperature": 30.0,
+      "control_cost_weight": 0.01,
+      "action_low": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "action_high": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "episodes": {
+    "42": {
+      "return": -2601587.242616885,
+      "elapsed_seconds": 12.453590400051326,
+      "clipped_action_fraction": 0.0,
+      "final_effective_sample_size": 10.67768555855575
+    },
+    "43": {
+      "return": -2599730.041974995,
+      "elapsed_seconds": 11.81171050015837,
+      "clipped_action_fraction": 0.0,
+      "final_effective_sample_size": 43.77067067573054
+    },
+    "44": {
+      "return": -2604711.1954730367,
+      "elapsed_seconds": 11.79506119992584,
+      "clipped_action_fraction": 0.0,
+      "final_effective_sample_size": 44.93131655639249
+    },
+    "45": {
+      "return": -2600964.0596510097,
+      "elapsed_seconds": 11.77233980013989,
+      "clipped_action_fraction": 0.0,
+      "final_effective_sample_size": 36.59979827775973
+    },
+    "46": {
+      "return": -2595786.0452476745,
+      "elapsed_seconds": 11.720669300062582,
+      "clipped_action_fraction": 0.0,
+      "final_effective_sample_size": 46.959667952930374
+    }
+  },
+  "returns": [
+    -2601587.242616885,
+    -2599730.041974995,
+    -2604711.1954730367,
+    -2600964.0596510097,
+    -2595786.0452476745
+  ],
+  "summary": {
+    "episodes": 5,
+    "mean": -2600555.71699272,
+    "std": 2895.8694041908934,
+    "median": -2600964.0596510097,
+    "min": -2604711.1954730367,
+    "max": -2595786.0452476745
+  },
+  "mean_episode_seconds": 11.910674240067602
+}

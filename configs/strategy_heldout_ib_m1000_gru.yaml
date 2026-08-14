@@ -1,0 +1,52 @@
+seed: 42
+
+policies:
+  official_bc_checkpoint: outputs/checkpoints/official_bc_ib_m1000.pt
+  world_model_checkpoint: outputs/checkpoints/world_model_ib_m1000_gru_best.pt
+  mbppo_with_kl_checkpoint: outputs/checkpoints/mbppo_ib_m1000_gru_with_kl_final.pt
+  mbppo_without_kl_checkpoint: outputs/checkpoints/mbppo_ib_m1000_gru_without_kl_final.pt
+  device: cuda
+
+evaluation:
+  role: one_time_held_out_strategy_reporting
+  selection_locked_before_held_out: cem_h10
+  seeds: [47, 48, 49, 50, 51]
+  episode_horizon: 1000
+  reuse_bc_metrics: outputs/metrics/strategy_ib_m1000.json
+
+common:
+  horizon: 10
+  action_low: [-1.0, -1.0, -1.0]
+  action_high: [1.0, 1.0, 1.0]
+
+cem:
+  population: 64
+  elites: 8
+  iterations: 2
+  initial_std: 0.35
+  min_std: 0.05
+
+icem:
+  population: 64
+  elites: 8
+  iterations: 2
+  initial_std: 0.5
+  min_std: 0.05
+  momentum: 0.1
+  population_decay: 1.25
+  reuse_fraction: 0.3
+  noise_beta: 2.0
+
+mppi:
+  population: 128
+  elites: 8
+  iterations: 1
+  initial_std: 0.35
+  min_std: 0.05
+  noise_std: [0.35, 0.35, 0.35]
+  temperature: 30.0
+
+outputs:
+  metrics_json: outputs/metrics/strategy_ib_m1000_gru_heldout.json
+  episode_csv: outputs/metrics/strategy_ib_m1000_gru_heldout_episodes.csv
+  comparison_figure: outputs/figures/strategy_ib_m1000_gru_heldout.png

@@ -58,8 +58,17 @@ Audit date: 2026-08-14
 - `[OFFICIAL CODE]` neither the fixed NeoRL main repository nor the fixed OfflineRL submodule contains the original IB SAC checkpoint or a loader for it; no model/checkpoint artifacts are tracked.
 - `[UNVERIFIED]` no public checkpoint was found in the audited official repositories. Until an official artifact is located, the final comparison must use empirical dataset trajectory return as the original-behavior reference and label it as offline empirical performance, not online replay.
 
+## NeoRL MB-PPO protocol
+
+- `[PAPER]` MB-PPO samples a mini-batch of starting states from the offline dataset and rolls the training policy through a frozen learned transition model for 10 steps.
+- `[PAPER]` PPO performs policy improvement; the behavior policy is recovered with BC and initializes the MB-PPO policy.
+- `[PAPER]` the optional anti-exploitation penalty is `D_KL(pi_behavior || pi)`. The paper does not report its numerical coefficient.
+- `[PAPER]` policy and value networks are two-hidden-layer MLPs with 256 units per layer, with tanh-transformed policy outputs.
+- `[PAPER]` MB-PPO uses Adam at `3e-4` for 5K gradient steps and reports only the final trained policy.
+- `[OFFICIAL CODE]` the fixed OfflineRL commit does not contain the paper's MB-PPO baseline. The local implementation therefore combines the explicit NeoRL settings above with PPO's clipped surrogate objective and records the project-selected KL coefficient (`1.0`) separately from paper-sourced settings.
+- `[VERIFIED LOCALLY]` both KL variants share the same code and configuration except for the behavior-KL coefficient. Both use the validation-selected frozen GRU World Model; no strategy result updates or selects World Model parameters.
+
 ## Source conflicts resolved
 
 - Runtime/data shape uses 180 dimensions because both current official source and released data agree; the paper's 182-dimensional appendix statement is retained as historical context.
 - Official BC compatibility targets the fixed code commit. The paper/code learning-rate and early-stopping differences remain explicit rather than silently merged.
-

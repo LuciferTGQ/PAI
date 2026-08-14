@@ -1,0 +1,116 @@
+{
+  "metadata": {
+    "role": "development_strategy_comparison",
+    "development_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "held_out_seeds_reserved": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "episode_horizon": 1000,
+    "world_model_checkpoint": "G:\\PAI\\outputs\\checkpoints\\world_model_ib_m1000_gru_best.pt",
+    "world_model_frozen": true,
+    "official_bc_checkpoint": "G:\\PAI\\outputs\\checkpoints\\official_bc_ib_m1000.pt",
+    "neorl_protocol": {
+      "rollout_horizon": 10,
+      "gradient_steps": 5000,
+      "learning_rate": 0.0003,
+      "policy_and_value_hidden_layers": {
+        "hidden_size": 256,
+        "hidden_layers": 2
+      },
+      "behavior_kl_direction": "D_KL(pi_behavior || pi)",
+      "behavior_kl_coefficient": 1.0,
+      "coefficient_source": "explicit project setting; NeoRL v2 paper does not report the coefficient"
+    },
+    "sources": {
+      "neorl_v2_paper": "https://arxiv.org/abs/2102.00714",
+      "ppo_paper": "https://arxiv.org/abs/1707.06347",
+      "note": "Fixed OfflineRL commit 807933a87f77529f17bd81ac64d717aad89f5cdf has no NeoRL MB-PPO implementation."
+    }
+  },
+  "methods": {
+    "official_bc": {
+      "returns": [
+        -288550.3327567922,
+        -288083.45245140936,
+        -288027.5107067064,
+        -288216.32417794614,
+        -287998.4277032748
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -288175.2095592258,
+        "std": 201.93759812814375,
+        "median": -288083.45245140936,
+        "min": -288550.3327567922,
+        "max": -287998.4277032748
+      }
+    },
+    "cem": {
+      "returns": [
+        -269809.07563216914,
+        -269019.5644952832,
+        -268870.4124338473,
+        -270098.86524284753,
+        -269071.8089461006
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -269373.94535004953,
+        "std": 486.88084947079057,
+        "median": -269071.8089461006,
+        "min": -270098.86524284753,
+        "max": -268870.4124338473
+      }
+    },
+    "mbppo_with_kl": {
+      "returns": [
+        -285032.9112818104,
+        -284569.127284214,
+        -284738.06955886574,
+        -284682.4706929367,
+        -284551.5237588937
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -284714.8205153441,
+        "std": 173.58635488419284,
+        "median": -284682.4706929367,
+        "min": -285032.9112818104,
+        "max": -284551.5237588937
+      },
+      "clipped_action_scalars": 0,
+      "action_scalars": 15000,
+      "clipped_action_fraction": 0.0
+    },
+    "mbppo_without_kl": {
+      "returns": [
+        -884202.7989509981,
+        -884053.6307014967,
+        -883472.4494901372,
+        -883976.3181359922,
+        -882838.028077702
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -883708.645071265,
+        "std": 499.72278585772494,
+        "median": -883976.3181359922,
+        "min": -884202.7989509981,
+        "max": -882838.028077702
+      },
+      "clipped_action_scalars": 0,
+      "action_scalars": 15000,
+      "clipped_action_fraction": 0.0
+    }
+  }
+}

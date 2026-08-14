@@ -1,0 +1,296 @@
+{
+  "metadata": {
+    "role": "one_time_held_out_strategy_reporting",
+    "selection_locked_before_held_out": "cem_h10",
+    "held_out_seeds": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "episode_horizon": 1000,
+    "world_model_checkpoint": "G:\\PAI\\outputs\\checkpoints\\world_model_ib_m1000_gru_best.pt",
+    "world_model_frozen": true,
+    "common_horizon": 10,
+    "mppi_variant": "original reference-form configuration; stability diagnostic excluded after development"
+  },
+  "methods": {
+    "official_bc": {
+      "episodes": {
+        "47": {
+          "return": -288598.9830244137,
+          "elapsed_seconds": 0.0,
+          "clipped_action_fraction": null
+        },
+        "48": {
+          "return": -288584.65996015596,
+          "elapsed_seconds": 0.0,
+          "clipped_action_fraction": null
+        },
+        "49": {
+          "return": -287733.1710404193,
+          "elapsed_seconds": 0.0,
+          "clipped_action_fraction": null
+        },
+        "50": {
+          "return": -288200.39672663715,
+          "elapsed_seconds": 0.0,
+          "clipped_action_fraction": null
+        },
+        "51": {
+          "return": -288196.541482272,
+          "elapsed_seconds": 0.0,
+          "clipped_action_fraction": null
+        }
+      },
+      "returns": [
+        -288598.9830244137,
+        -288584.65996015596,
+        -287733.1710404193,
+        -288200.39672663715,
+        -288196.541482272
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -288262.75044677965,
+        "std": 317.9320814584021,
+        "median": -288200.39672663715,
+        "min": -288598.9830244137,
+        "max": -287733.1710404193
+      },
+      "mean_episode_seconds": 0.0,
+      "reused_without_rerun": true
+    },
+    "cem": {
+      "episodes": {
+        "47": {
+          "return": -268308.18425556796,
+          "elapsed_seconds": 16.943014400079846,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -268820.1793576515,
+          "elapsed_seconds": 16.825072099920362,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -267622.1557316093,
+          "elapsed_seconds": 16.98371860012412,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -269056.8689907432,
+          "elapsed_seconds": 16.774470699951053,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -267036.7958317073,
+          "elapsed_seconds": 16.89059379999526,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -268308.18425556796,
+        -268820.1793576515,
+        -267622.1557316093,
+        -269056.8689907432,
+        -267036.7958317073
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -268168.8368334559,
+        "std": 750.0190606920909,
+        "median": -268308.18425556796,
+        "min": -269056.8689907432,
+        "max": -267036.7958317073
+      },
+      "mean_episode_seconds": 16.88337392001413
+    },
+    "icem": {
+      "episodes": {
+        "47": {
+          "return": -351279.3138263317,
+          "elapsed_seconds": 23.67623159987852,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -359276.6901998287,
+          "elapsed_seconds": 23.70190260000527,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -324003.0618328913,
+          "elapsed_seconds": 23.826052599819377,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -308857.42133303196,
+          "elapsed_seconds": 23.603850999847054,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -354661.3942884846,
+          "elapsed_seconds": 23.823469900060445,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -351279.3138263317,
+        -359276.6901998287,
+        -324003.0618328913,
+        -308857.42133303196,
+        -354661.3942884846
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -339615.5762961136,
+        "std": 19691.589660388014,
+        "median": -351279.3138263317,
+        "min": -359276.6901998287,
+        "max": -308857.42133303196
+      },
+      "mean_episode_seconds": 23.726301539922133
+    },
+    "mppi": {
+      "episodes": {
+        "47": {
+          "return": -877080.3419246643,
+          "elapsed_seconds": 11.870702899992466,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 1.0899499553293235
+        },
+        "48": {
+          "return": -1377527.1789766648,
+          "elapsed_seconds": 11.739179000025615,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 2.4740901490982523
+        },
+        "49": {
+          "return": -956704.9187926564,
+          "elapsed_seconds": 11.81511289998889,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 1.9795541134479808
+        },
+        "50": {
+          "return": -832216.1294109181,
+          "elapsed_seconds": 11.682179699884728,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 1.071827488657538
+        },
+        "51": {
+          "return": -614447.0623486419,
+          "elapsed_seconds": 12.001409400021657,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 1.185599682619256
+        }
+      },
+      "returns": [
+        -877080.3419246643,
+        -1377527.1789766648,
+        -956704.9187926564,
+        -832216.1294109181,
+        -614447.0623486419
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -931595.1262907091,
+        "std": 250166.6798315524,
+        "median": -877080.3419246643,
+        "min": -1377527.1789766648,
+        "max": -614447.0623486419
+      },
+      "mean_episode_seconds": 11.82171677998267
+    },
+    "mbppo_with_kl": {
+      "episodes": {
+        "47": {
+          "return": -284970.27825535496,
+          "elapsed_seconds": 0.6813893001526594,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -285140.21820577176,
+          "elapsed_seconds": 0.7601156001910567,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -284464.86736840126,
+          "elapsed_seconds": 0.7332897000014782,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -284652.02585761185,
+          "elapsed_seconds": 0.8705398999154568,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -284930.53431652824,
+          "elapsed_seconds": 0.8830547998659313,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -284970.27825535496,
+        -285140.21820577176,
+        -284464.86736840126,
+        -284652.02585761185,
+        -284930.53431652824
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -284831.5848007336,
+        "std": 241.24864723669336,
+        "median": -284930.53431652824,
+        "min": -285140.21820577176,
+        "max": -284464.86736840126
+      },
+      "mean_episode_seconds": 0.7856778600253165
+    },
+    "mbppo_without_kl": {
+      "episodes": {
+        "47": {
+          "return": -885472.7487736533,
+          "elapsed_seconds": 0.9475525000598282,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -885549.1679067689,
+          "elapsed_seconds": 0.9009168001357466,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -884005.6590541148,
+          "elapsed_seconds": 1.0227874000556767,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -884889.368477613,
+          "elapsed_seconds": 0.9654981999192387,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -883542.9139760362,
+          "elapsed_seconds": 1.026119199814275,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -885472.7487736533,
+        -885549.1679067689,
+        -884005.6590541148,
+        -884889.368477613,
+        -883542.9139760362
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -884691.9716376371,
+        "std": 796.8340309444794,
+        "median": -884889.368477613,
+        "min": -885549.1679067689,
+        "max": -883542.9139760362
+      },
+      "mean_episode_seconds": 0.972574819996953
+    }
+  }
+}

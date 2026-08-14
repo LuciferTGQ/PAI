@@ -67,6 +67,44 @@ class FrozenWorldModel:
         result = prediction.cpu().numpy()
         return result[0] if single else result
 
+    @torch.inference_mode()
+    def predict_next_frame_tensor(
+        self, history: torch.Tensor, action: torch.Tensor
+    ) -> torch.Tensor:
+        """Batched raw-space inference without CPU transfers for policy training.
+
+        Histories use the released NeoRL convention: flattened, latest frame first.
+        The returned frame is in raw simulator units. The world model stays frozen.
+        """
+        histories = history.to(device=self.device, dtype=torch.float32)
+        actions = action.to(device=self.device, dtype=torch.float32)
+        if histories.ndim == 3:
+            histories = histories.reshape(len(histories), -1)
+        if histories.ndim != 2 or histories.shape[1] != self.obs_dim:
+            raise ValueError(
+                f"history must have shape [B,{self.obs_dim}], got {tuple(histories.shape)}"
+            )
+        if actions.ndim != 2 or len(actions) != len(histories):
+            raise ValueError("action must be a matching [B,action_dim] tensor")
+
+        latest_first = histories.reshape(-1, self.history_len, self.frame_dim)
+        chronological = torch.flip(latest_first, dims=(1,))
+        normalized_history = (chronological - self._frame_mean) / self._frame_std
+        normalized_action = (actions - self._action_mean) / self._action_std
+        normalized_prediction = self.model(normalized_history, normalized_action)
+        return normalized_prediction * self._target_std + self._target_mean
+
+    def update_history_tensor(
+        self, history: torch.Tensor, next_frame: torch.Tensor
+    ) -> torch.Tensor:
+        histories = history.to(device=self.device, dtype=torch.float32)
+        frames = next_frame.to(device=self.device, dtype=torch.float32)
+        if histories.ndim != 2 or histories.shape[1] != self.obs_dim:
+            raise ValueError(f"history must have shape [B,{self.obs_dim}]")
+        if frames.shape != (len(histories), self.frame_dim):
+            raise ValueError(f"next_frame must have shape [B,{self.frame_dim}]")
+        return torch.cat((frames, histories[:, :-self.frame_dim]), dim=1)
+
     def rollout(self, history: np.ndarray, action_sequence: np.ndarray) -> np.ndarray:
         current = np.asarray(history, dtype=np.float32).reshape(self.obs_dim).copy()
         actions = np.asarray(action_sequence, dtype=np.float32)

@@ -2,6 +2,8 @@ import numpy as np
 
 from src.evaluation.cem_horizon import select_horizon_one_standard_error
 from src.strategy.cem_mpc import CEMMPCPolicy, ib_reward_from_frame
+from src.strategy.icem_mpc import ICEMMPCPolicy, powerlaw_noise
+from src.strategy.mppi_mpc import MPPIMPCPolicy
 
 
 class _FakeWorldModel:
@@ -53,3 +55,43 @@ def test_one_standard_error_horizon_selection_prefers_shorter_candidate() -> Non
     assert selection["best_mean_horizon"] == 10
     assert selection["eligible_horizons"] == [5, 10]
     assert selection["selected_horizon"] == 5
+
+
+def test_powerlaw_noise_shape_and_scale() -> None:
+    noise = powerlaw_noise(np.random.default_rng(3), 16, 10, 3, beta=2.0)
+    assert noise.shape == (16, 10, 3)
+    assert np.allclose(noise.std(axis=1), 1.0, atol=1e-5)
+
+
+def test_icem_and_mppi_actions_are_bounded() -> None:
+    base = {
+        "horizon": 3,
+        "population": 32,
+        "elites": 4,
+        "iterations": 2,
+        "initial_std": 0.5,
+        "min_std": 0.01,
+        "action_low": [-1.0, -1.0, -1.0],
+        "action_high": [1.0, 1.0, 1.0],
+    }
+    icem = ICEMMPCPolicy(
+        _FakeWorldModel(),
+        _ZeroPolicy(),
+        {
+            **base,
+            "momentum": 0.1,
+            "population_decay": 1.25,
+            "reuse_fraction": 0.3,
+            "noise_beta": 2.0,
+        },
+        seed=5,
+    )
+    mppi = MPPIMPCPolicy(
+        _FakeWorldModel(),
+        _ZeroPolicy(),
+        {**base, "population": 64, "temperature": 30.0, "noise_std": [0.35] * 3},
+        seed=5,
+    )
+    for policy in (icem, mppi):
+        action = policy.act(np.zeros(180, dtype=np.float32))
+        assert np.all(action >= -1.0) and np.all(action <= 1.0)

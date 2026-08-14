@@ -1,0 +1,196 @@
+{
+  "metadata": {
+    "role": "development_planner_comparison",
+    "world_model_checkpoint": "G:\\PAI\\outputs\\checkpoints\\world_model_ib_m1000_gru_best.pt",
+    "world_model_frozen": true,
+    "official_bc_checkpoint": "G:\\PAI\\outputs\\checkpoints\\official_bc_ib_m1000.pt",
+    "development_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "held_out_seeds_reserved": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "episode_horizon": 1000,
+    "horizon": 10,
+    "icem": {
+      "population": 64,
+      "elites": 8,
+      "iterations": 2,
+      "initial_std": 0.5,
+      "min_std": 0.05,
+      "momentum": 0.1,
+      "population_decay": 1.25,
+      "reuse_fraction": 0.3,
+      "noise_beta": 2.0
+    },
+    "mppi": {
+      "population": 128,
+      "elites": 8,
+      "iterations": 1,
+      "initial_std": 0.35,
+      "min_std": 0.05,
+      "noise_std": [
+        0.35,
+        0.35,
+        0.35
+      ],
+      "temperature": 30.0
+    },
+    "sources": {
+      "icem_paper": "https://proceedings.mlr.press/v155/pinneri21a.html",
+      "icem_official_code": "https://github.com/martius-lab/iCEM",
+      "mppi_paper": "https://doi.org/10.1109/ICRA.2017.7989202",
+      "mppi_reference_code": "https://github.com/UM-ARM-Lab/pytorch_mppi"
+    }
+  },
+  "methods": {
+    "cem": {
+      "episodes": {
+        "42": {
+          "return": -269809.07563216914,
+          "elapsed_seconds": 16.86353940004483,
+          "clipped_action_fraction": 0.0
+        },
+        "43": {
+          "return": -269019.5644952832,
+          "elapsed_seconds": 16.996722500072792,
+          "clipped_action_fraction": 0.0
+        },
+        "44": {
+          "return": -268870.4124338473,
+          "elapsed_seconds": 16.900274000130594,
+          "clipped_action_fraction": 0.0
+        },
+        "45": {
+          "return": -270098.86524284753,
+          "elapsed_seconds": 16.82454019994475,
+          "clipped_action_fraction": 0.0
+        },
+        "46": {
+          "return": -269071.8089461006,
+          "elapsed_seconds": 16.862730300053954,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -269809.07563216914,
+        -269019.5644952832,
+        -268870.4124338473,
+        -270098.86524284753,
+        -269071.8089461006
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -269373.94535004953,
+        "std": 486.88084947079057,
+        "median": -269071.8089461006,
+        "min": -270098.86524284753,
+        "max": -268870.4124338473
+      },
+      "mean_episode_seconds": 16.889561280049385
+    },
+    "icem": {
+      "episodes": {
+        "42": {
+          "return": -317654.173104034,
+          "elapsed_seconds": 24.09940529987216,
+          "clipped_action_fraction": 0.0
+        },
+        "43": {
+          "return": -349048.60814642464,
+          "elapsed_seconds": 24.067588600097224,
+          "clipped_action_fraction": 0.0
+        },
+        "44": {
+          "return": -358412.75955312187,
+          "elapsed_seconds": 24.03018769994378,
+          "clipped_action_fraction": 0.0
+        },
+        "45": {
+          "return": -354005.9994980144,
+          "elapsed_seconds": 24.240785700036213,
+          "clipped_action_fraction": 0.0
+        },
+        "46": {
+          "return": -306979.31989423686,
+          "elapsed_seconds": 24.20598499989137,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -317654.173104034,
+        -349048.60814642464,
+        -358412.75955312187,
+        -354005.9994980144,
+        -306979.31989423686
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -337220.1720391664,
+        "std": 20823.732242513393,
+        "median": -349048.60814642464,
+        "min": -358412.75955312187,
+        "max": -306979.31989423686
+      },
+      "mean_episode_seconds": 24.12879045996815
+    },
+    "mppi": {
+      "episodes": {
+        "42": {
+          "return": -1094384.8335986822,
+          "elapsed_seconds": 11.842314600013196,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 3.178963366599562
+        },
+        "43": {
+          "return": -1214308.9067456508,
+          "elapsed_seconds": 11.802906299941242,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 4.416357633758311
+        },
+        "44": {
+          "return": -947874.7493775298,
+          "elapsed_seconds": 11.993903500027955,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 2.410030435633573
+        },
+        "45": {
+          "return": -1020493.1250652764,
+          "elapsed_seconds": 11.769693900132552,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 2.699109403500801
+        },
+        "46": {
+          "return": -735851.752656708,
+          "elapsed_seconds": 11.76367749995552,
+          "clipped_action_fraction": 0.0,
+          "final_effective_sample_size": 2.148680721003285
+        }
+      },
+      "returns": [
+        -1094384.8335986822,
+        -1214308.9067456508,
+        -947874.7493775298,
+        -1020493.1250652764,
+        -735851.752656708
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -1002582.6734887693,
+        "std": 159821.62545422217,
+        "median": -1020493.1250652764,
+        "min": -1214308.9067456508,
+        "max": -735851.752656708
+      },
+      "mean_episode_seconds": 11.834499160014094
+    }
+  }
+}
