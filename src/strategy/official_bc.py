@@ -104,8 +104,8 @@ def _official_validation_loss(
     device: torch.device,
 ) -> tuple[float, float]:
     """Return the official summed batch-MSE criterion and sample-weighted MSE."""
-    official_sum = 0.0
-    squared_error_sum = 0.0
+    official_batch_means: list[torch.Tensor] = []
+    squared_error_sum = torch.zeros((), device=device)
     scalar_count = 0
     actor.eval()
     with torch.inference_mode():
@@ -115,10 +115,11 @@ def _official_validation_loss(
             action_batch = actions[start:stop].to(device)
             prediction = actor(obs_batch).mean
             squared_error = (prediction - action_batch).square()
-            official_sum += squared_error.mean().item()
-            squared_error_sum += squared_error.sum().item()
+            official_batch_means.append(squared_error.mean().detach())
+            squared_error_sum.add_(squared_error.sum())
             scalar_count += squared_error.numel()
-    return official_sum, squared_error_sum / scalar_count
+    official_sum = sum(torch.stack(official_batch_means).cpu().tolist())
+    return official_sum, squared_error_sum.item() / scalar_count
 
 
 def _write_history(history: Iterable[Dict[str, float]], path: str | Path) -> None:

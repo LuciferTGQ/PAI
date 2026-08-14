@@ -8,5 +8,5 @@
 | Official BC | DONE |
 | Frozen World Model Strategy | DONE |
 | Three-Policy Simulator Evaluation | DONE |
-| IB-M-1000 Formal Experiment | TODO |
-| Report | DOING |
+| IB-M-1000 Formal Experiment | DONE |
+| Report | DONE |

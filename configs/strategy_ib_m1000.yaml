@@ -1,0 +1,29 @@
+seed: 42
+
+data:
+  behavior_reference_path: data/raw/ib-medium-1000-train.npz
+
+policies:
+  official_bc_checkpoint: outputs/checkpoints/official_bc_ib_m1000.pt
+  world_model_checkpoint: outputs/checkpoints/world_model_ib_m1000.pt
+  device: cuda
+
+cem:
+  horizon: 5
+  population: 64
+  elites: 8
+  iterations: 2
+  initial_std: 0.35
+  min_std: 0.05
+  action_low: [-1.0, -1.0, -1.0]
+  action_high: [1.0, 1.0, 1.0]
+
+evaluation:
+  seeds: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+  episode_horizon: 1000
+
+outputs:
+  metrics_json: outputs/metrics/strategy_ib_m1000.json
+  episode_csv: outputs/metrics/strategy_ib_m1000_episodes.csv
+  reward_trace_csv: outputs/metrics/strategy_ib_m1000_reward_traces.csv
+  comparison_figure: outputs/figures/strategy_ib_m1000_comparison.png

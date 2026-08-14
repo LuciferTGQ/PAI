@@ -79,7 +79,7 @@ def _write_history(history: list[Dict[str, float]], csv_path: Path, figure_path:
     plt.plot(epochs, [row["val_mse"] for row in history], marker="o", label="validation")
     plt.xlabel("Epoch")
     plt.ylabel("Normalized MSE")
-    plt.title("IB-M-100 Temporal Transformer training")
+    plt.title("IB Temporal Transformer training")
     plt.grid(alpha=0.25)
     plt.legend()
     plt.tight_layout()
@@ -195,4 +195,3 @@ def train_from_config(config_path: str | Path) -> Tuple[Path, list[Dict[str, flo
     )
     print(f"best_checkpoint={checkpoint_path} best_val_mse={best_val:.6f}")
     return checkpoint_path, history
-

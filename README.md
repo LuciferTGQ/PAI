@@ -51,6 +51,12 @@ This evaluates the released behavior data as an offline reference, the BC
 policy online, and receding-horizon CEM against the frozen Temporal Transformer.
 See `docs/SMOKE_RESULTS.md` for the M-100 results and comparison caveats.
 
+## Formal M-1000 run
+
+Use the corresponding `*_ib_m1000.yaml` configs with the same three scripts.
+The completed setup, convergence evidence, ablations, prediction metrics, and
+10-seed simulator comparison are recorded in `docs/EXPERIMENTS.md`.
+
 ## Authoritative external sources
 
 - NeoRL main repository: `https://github.com/Polixir/NeoRL`, fixed locally at `717c9a92d5253876f8cb28318ef72e3d5ab05968`.
