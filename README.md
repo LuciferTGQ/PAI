@@ -57,6 +57,11 @@ Use the corresponding `*_ib_m1000.yaml` configs with the same three scripts.
 The completed setup, convergence evidence, ablations, prediction metrics, and
 10-seed simulator comparison are recorded in `docs/EXPERIMENTS.md`.
 
+The controlled 100-epoch follow-up is documented in
+`docs/WORLD_MODEL_100_EPOCH_STUDY.md`. It distinguishes the epoch-11 one-step
+best checkpoint from the epoch-100 planning checkpoint and explains why a
+rollout-aligned validation criterion is needed.
+
 ## Authoritative external sources
 
 - NeoRL main repository: `https://github.com/Polixir/NeoRL`, fixed locally at `717c9a92d5253876f8cb28318ef72e3d5ab05968`.

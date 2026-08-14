@@ -154,3 +154,16 @@ class IBTransitionDataset(Dataset):
         target = (self.targets[index] - self.target_mean) / self.target_std
         return history, action, target
 
+    def __getitems__(
+        self, indices: list[int]
+    ) -> list[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+        """Vectorized DataLoader fetch with the same per-sample transformations."""
+        index_tensor = torch.as_tensor(indices, dtype=torch.long)
+        latest_first = self.obs[index_tensor].reshape(
+            -1, self.history_len, self.frame_dim
+        )
+        chronological = torch.flip(latest_first, dims=(1,))
+        histories = (chronological - self.frame_mean) / self.frame_std
+        actions = (self.actions[index_tensor] - self.action_mean) / self.action_std
+        targets = (self.targets[index_tensor] - self.target_mean) / self.target_std
+        return list(zip(histories.unbind(0), actions.unbind(0), targets.unbind(0)))

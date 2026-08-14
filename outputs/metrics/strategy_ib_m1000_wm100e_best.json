@@ -13,6 +13,7 @@
       51
     ],
     "episode_horizon": 1000,
+    "world_model_checkpoint": "G:\\PAI\\outputs\\checkpoints\\world_model_ib_m1000_100e_best.pt",
     "behavior_reference": "offline released behavior trajectories; not matched-seed online rollouts",
     "online_environment": "fixed official NeoRL IBGym, setpoint=70, classic reward",
     "environment_action_clipping": [
@@ -1077,24 +1078,24 @@
   },
   "world_model_cem": {
     "returns": [
-      -278355.37001841085,
-      -283642.9938564651,
-      -276342.9812519536,
-      -282423.95414613653,
-      -279830.73032657034,
-      -277069.49035414413,
-      -283096.1968567973,
-      -264228.53260019806,
-      -276749.4194829217,
-      -280961.14701763936
+      -273864.51933698484,
+      -276866.75257953117,
+      -279192.5953951043,
+      -276008.68000951316,
+      -260161.61340307764,
+      -261139.46791800353,
+      -275625.0831442004,
+      -264267.4238158447,
+      -273364.064946156,
+      -260850.68054173433
     ],
     "summary": {
       "episodes": 10,
-      "mean": -278270.0815911237,
-      "std": 5326.646318655004,
-      "median": -279093.0501724906,
-      "min": -283642.9938564651,
-      "max": -264228.53260019806
+      "mean": -270134.08810901496,
+      "std": 7192.6969854409135,
+      "median": -273614.2921415704,
+      "min": -279192.5953951043,
+      "max": -260161.61340307764
     },
     "clipped_action_scalars": 0,
     "action_scalars": 30000,

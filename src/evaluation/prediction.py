@@ -180,24 +180,36 @@ def evaluate_multi_step(
     return result
 
 
-def evaluate_from_config(config_path: str | Path) -> Dict[str, object]:
+def evaluate_from_config(
+    config_path: str | Path,
+    checkpoint_override: str | Path | None = None,
+    output_suffix: str = "",
+) -> Dict[str, object]:
     config, project_root = load_config(config_path)
     data_cfg = config["data"]
     eval_cfg = config["evaluation"]
     output_cfg = config["outputs"]
     val_data = load_ib_npz(resolve_path(project_root, data_cfg["val_path"]))
     print("val_audit", validate_ib_semantics(val_data, data_cfg["history_len"], data_cfg["frame_dim"]))
+    checkpoint_path = checkpoint_override or output_cfg["checkpoint"]
     world_model = FrozenWorldModel(
-        resolve_path(project_root, output_cfg["checkpoint"]), config["training"]["device"]
+        resolve_path(project_root, checkpoint_path), config["training"]["device"]
     )
+
+    def output_path(key: str) -> Path:
+        path = resolve_path(project_root, output_cfg[key])
+        if output_suffix:
+            path = path.with_name(f"{path.stem}{output_suffix}{path.suffix}")
+        return path
+
     one_step = evaluate_one_step(
         world_model,
         val_data,
         data_cfg["variable_names"],
         eval_cfg["batch_size"],
-        resolve_path(project_root, output_cfg["one_step_json"]),
-        resolve_path(project_root, output_cfg["one_step_csv"]),
-        resolve_path(project_root, output_cfg["one_step_figure"]),
+        output_path("one_step_json"),
+        output_path("one_step_csv"),
+        output_path("one_step_figure"),
         eval_cfg["one_step_plot_samples"],
         eval_cfg["selected_variables"],
     )
@@ -208,13 +220,12 @@ def evaluate_from_config(config_path: str | Path) -> Dict[str, object]:
         eval_cfg["horizons"],
         eval_cfg["rollout_stride"],
         eval_cfg["batch_size"],
-        resolve_path(project_root, output_cfg["multi_step_json"]),
-        resolve_path(project_root, output_cfg["multi_step_csv"]),
-        resolve_path(project_root, output_cfg["horizon_figure"]),
-        resolve_path(project_root, output_cfg["rollout_figure"]),
+        output_path("multi_step_json"),
+        output_path("multi_step_csv"),
+        output_path("horizon_figure"),
+        output_path("rollout_figure"),
         eval_cfg["selected_variables"],
     )
     print("one_step", json.dumps(one_step, indent=2))
     print("multi_step", json.dumps(multi_step, indent=2))
     return {"one_step": one_step, "multi_step": multi_step}
-

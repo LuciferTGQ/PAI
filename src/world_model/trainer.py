@@ -41,8 +41,8 @@ def _run_epoch(
 ) -> float:
     training = optimizer is not None
     model.train(training)
-    total_loss = 0.0
-    total_samples = 0
+    batch_losses: list[torch.Tensor] = []
+    batch_sizes: list[int] = []
     context = torch.enable_grad if training else torch.no_grad
     with context():
         for history, action, target in loader:
@@ -61,9 +61,11 @@ def _run_epoch(
                 scaler.step(optimizer)
                 scaler.update()
             batch_size = len(history)
-            total_loss += loss.detach().item() * batch_size
-            total_samples += batch_size
-    return total_loss / total_samples
+            batch_losses.append(loss.detach())
+            batch_sizes.append(batch_size)
+    loss_values = torch.stack(batch_losses).cpu().tolist()
+    total_loss = sum(value * size for value, size in zip(loss_values, batch_sizes))
+    return total_loss / sum(batch_sizes)
 
 
 def _write_history(history: list[Dict[str, float]], csv_path: Path, figure_path: Path) -> None:
@@ -193,5 +195,21 @@ def train_from_config(config_path: str | Path) -> Tuple[Path, list[Dict[str, flo
         resolve_path(project_root, output_cfg["training_history_csv"]),
         resolve_path(project_root, output_cfg["training_curve"]),
     )
+    if output_cfg.get("last_checkpoint"):
+        last_checkpoint_path = resolve_path(project_root, output_cfg["last_checkpoint"])
+        last_checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "model_state": model.state_dict(),
+                "model_config": full_model_cfg,
+                "normalization": stats.to_dict(),
+                "seed": int(config["seed"]),
+                "epoch": int(history[-1]["epoch"]),
+                "validation_mse": float(history[-1]["val_mse"]),
+                "source_config": config,
+            },
+            last_checkpoint_path,
+        )
+        print(f"last_checkpoint={last_checkpoint_path}")
     print(f"best_checkpoint={checkpoint_path} best_val_mse={best_val:.6f}")
     return checkpoint_path, history

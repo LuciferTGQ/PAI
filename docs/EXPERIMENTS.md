@@ -102,3 +102,10 @@ Local ignored checkpoint SHA-256 values for this run are:
 
 - world model: `AF3D196E5EB9A86F9ED42A7224FD8CA9D853BCC6C747BD2D53BA3B07020E0C1B`
 - official BC: `A8C1A9E67AF26F47778F8E41A8F094DF19C11F1A78E7C50F21A829BE528F2D8D`
+
+## 100-epoch follow-up
+
+A controlled 100-epoch extension found that epoch 11 is best for one-step
+validation, while epoch 100 is substantially better for free-running prediction
+and the five-step CEM controller. The full trend, matched-seed comparison, and
+checkpoint-selection recommendation are in `WORLD_MODEL_100_EPOCH_STUDY.md`.

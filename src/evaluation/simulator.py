@@ -128,7 +128,11 @@ def _plot_comparison(results: Dict[str, Any], path: Path) -> None:
     plt.close(figure)
 
 
-def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
+def evaluate_strategy_from_config(
+    config_path: str | Path,
+    world_model_checkpoint_override: str | Path | None = None,
+    output_suffix: str = "",
+) -> Dict[str, Any]:
     config, root = load_config(config_path)
     data_config = config["data"]
     policy_config = config["policies"]
@@ -138,7 +142,9 @@ def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
     episode_horizon = int(evaluation_config["episode_horizon"])
 
     bc_checkpoint = resolve_path(root, policy_config["official_bc_checkpoint"])
-    wm_checkpoint = resolve_path(root, policy_config["world_model_checkpoint"])
+    wm_checkpoint = resolve_path(
+        root, world_model_checkpoint_override or policy_config["world_model_checkpoint"]
+    )
     device = str(policy_config["device"])
     behavior_returns = empirical_behavior_returns(
         resolve_path(root, data_config["behavior_reference_path"])
@@ -152,7 +158,9 @@ def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
         "metadata": {
             "seeds": seeds,
             "episode_horizon": episode_horizon,
-            "behavior_reference": "offline released M-100 trajectories; not matched-seed online rollouts",
+            "official_bc_checkpoint": str(bc_checkpoint),
+            "world_model_checkpoint": str(wm_checkpoint),
+            "behavior_reference": "offline released behavior trajectories; not matched-seed online rollouts",
             "online_environment": "fixed official NeoRL IBGym, setpoint=70, classic reward",
             "environment_action_clipping": [-1.0, 1.0],
             "cem": config["cem"],
@@ -173,7 +181,13 @@ def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
         root,
     )
 
-    metrics_path = resolve_path(root, output_config["metrics_json"])
+    def output_path(key: str) -> Path:
+        path = resolve_path(root, output_config[key])
+        if output_suffix:
+            path = path.with_name(f"{path.stem}{output_suffix}{path.suffix}")
+        return path
+
+    metrics_path = output_path("metrics_json")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     serializable = {
         key: ({inner: value for inner, value in section.items() if inner != "reward_traces"}
@@ -192,7 +206,7 @@ def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
             {"policy": "original_behavior_reference_offline", "seed": "", "return": episode_return}
         )
     _write_csv(
-        resolve_path(root, output_config["episode_csv"]),
+        output_path("episode_csv"),
         ["policy", "seed", "return"],
         episode_rows,
     )
@@ -204,9 +218,9 @@ def evaluate_strategy_from_config(config_path: str | Path) -> Dict[str, Any]:
                 for step, reward in enumerate(trace, start=1)
             )
     _write_csv(
-        resolve_path(root, output_config["reward_trace_csv"]),
+        output_path("reward_trace_csv"),
         ["policy", "seed", "step", "reward"],
         trace_rows,
     )
-    _plot_comparison(results, resolve_path(root, output_config["comparison_figure"]))
+    _plot_comparison(results, output_path("comparison_figure"))
     return serializable
