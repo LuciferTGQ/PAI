@@ -42,6 +42,8 @@ def test_cem_action_is_bounded_and_improves_fake_cost() -> None:
     assert np.all(action >= -1.0) and np.all(action <= 1.0)
     assert action[0] < -0.5
     assert action[1] < -0.5
+    assert policy.last_diagnostics["model_evaluations"] == 256 * 3 * 2
+    assert np.isfinite(policy.last_diagnostics["predicted_best_return"])
 
 
 def test_one_standard_error_horizon_selection_prefers_shorter_candidate() -> None:

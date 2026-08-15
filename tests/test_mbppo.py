@@ -4,7 +4,12 @@ import numpy as np
 import torch
 from torch.distributions import kl_divergence
 
-from src.strategy.mbppo import MBPPOPolicy, ValueNetwork, _collect_rollout
+from src.strategy.mbppo import (
+    MBPPOPolicy,
+    ValueNetwork,
+    _collect_rollout,
+    _mean_and_safe_std,
+)
 from src.strategy.official_bc import OfficialGaussianActor
 
 
@@ -55,3 +60,10 @@ def test_mbppo_rollout_shapes_and_behavior_kl_identity() -> None:
     behavior_distribution = behavior(observations)
     behavior_kl = kl_divergence(behavior_distribution, distribution).sum(dim=-1)
     assert torch.allclose(behavior_kl, torch.zeros_like(behavior_kl), atol=1e-7)
+
+
+def test_chunked_normalization_matches_direct_statistics() -> None:
+    values = np.random.default_rng(7).normal(size=(257, 180)).astype(np.float32)
+    mean, std = _mean_and_safe_std(values, chunk_size=31)
+    np.testing.assert_allclose(mean, values.mean(axis=0), atol=1e-6)
+    np.testing.assert_allclose(std, values.std(axis=0), atol=1e-6)

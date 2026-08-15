@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import csv
+import time
 from pathlib import Path
 from typing import Any, Dict
 
@@ -79,9 +80,23 @@ class MBPPOPolicy:
         return actions[0] if single else actions
 
 
-def _safe_std(values: np.ndarray) -> np.ndarray:
-    std = values.astype(np.float64).std(axis=0).astype(np.float32)
-    return np.where(std < 1e-6, 1.0, std).astype(np.float32)
+def _mean_and_safe_std(
+    values: np.ndarray, chunk_size: int = 65_536
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute fixed normalization without a dataset-sized float64 copy."""
+    feature_sum = np.zeros(values.shape[1], dtype=np.float64)
+    feature_square_sum = np.zeros(values.shape[1], dtype=np.float64)
+    for start in range(0, len(values), chunk_size):
+        chunk = values[start : start + chunk_size].astype(np.float64)
+        feature_sum += chunk.sum(axis=0)
+        feature_square_sum += np.square(chunk).sum(axis=0)
+    mean = feature_sum / len(values)
+    variance = np.maximum(feature_square_sum / len(values) - np.square(mean), 0.0)
+    std = np.sqrt(variance)
+    return (
+        mean.astype(np.float32),
+        np.where(std < 1e-6, 1.0, std).astype(np.float32),
+    )
 
 
 def _collect_rollout(
@@ -173,8 +188,7 @@ def train_mbppo_variant(
 
     train_data = load_ib_npz(root / config["data"]["train_path"])
     train_observations = np.ascontiguousarray(train_data["obs"], dtype=np.float32)
-    obs_mean = train_observations.astype(np.float64).mean(axis=0).astype(np.float32)
-    obs_std = _safe_std(train_observations)
+    obs_mean, obs_std = _mean_and_safe_std(train_observations)
 
     bc_checkpoint = root / config["policies"]["official_bc_checkpoint"]
     behavior = OfficialBCPolicy.from_checkpoint(bc_checkpoint, device=device_name)
@@ -217,6 +231,34 @@ def train_mbppo_variant(
     rng = np.random.default_rng(seed)
     history: list[Dict[str, float | int]] = []
     step = 0
+    previous_elapsed = 0.0
+    checkpoint_dir = root / variant_outputs["checkpoint_dir"]
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    resumable = sorted(checkpoint_dir.glob("step_*.pt"))
+    if resumable:
+        resume_path = resumable[-1]
+        payload = torch.load(resume_path, map_location=device, weights_only=False)
+        if bool(payload["use_behavior_kl"]) != use_behavior_kl:
+            raise ValueError(f"MB-PPO resume variant mismatch: {resume_path}")
+        if Path(payload["world_model_checkpoint"]).resolve() != world_model_checkpoint.resolve():
+            raise ValueError(f"MB-PPO resume World Model mismatch: {resume_path}")
+        actor.load_state_dict(payload["actor_state"])
+        value.load_state_dict(payload["value_state"])
+        actor_optimizer.load_state_dict(payload["actor_optimizer_state"])
+        value_optimizer.load_state_dict(payload["value_optimizer_state"])
+        step = int(payload["gradient_step"])
+        history = list(payload.get("history", []))
+        previous_elapsed = float(payload.get("elapsed_time_seconds", 0.0))
+        if "numpy_rng_state" in payload:
+            rng.bit_generator.state = payload["numpy_rng_state"]
+        if "torch_rng_state" in payload:
+            torch.set_rng_state(payload["torch_rng_state"].cpu())
+        if device.type == "cuda" and payload.get("cuda_rng_state_all") is not None:
+            torch.cuda.set_rng_state_all(
+                [state.cpu() for state in payload["cuda_rng_state_all"]]
+            )
+        print(f"resume MB-PPO variant={variant} step={step} checkpoint={resume_path}")
+    training_started = time.perf_counter()
 
     while step < gradient_steps:
         initial_indices = rng.integers(0, len(train_observations), size=start_states)
@@ -287,6 +329,9 @@ def train_mbppo_variant(
                 if step == 1 or step % log_interval == 0 or step == gradient_steps:
                     row: Dict[str, float | int] = {
                         "gradient_step": step,
+                        "elapsed_time_seconds": previous_elapsed
+                        + time.perf_counter()
+                        - training_started,
                         "model_reward_mean": float(rollout["rewards"].mean().item()),
                         "model_reward_min": float(rollout["rewards"].min().item()),
                         "model_state_abs_max": float(
@@ -312,8 +357,6 @@ def train_mbppo_variant(
                     )
 
                 if step % checkpoint_interval == 0 or step == gradient_steps:
-                    checkpoint_dir = root / variant_outputs["checkpoint_dir"]
-                    checkpoint_dir.mkdir(parents=True, exist_ok=True)
                     checkpoint_path = checkpoint_dir / f"step_{step:04d}.pt"
                     payload = {
                         "actor_state": actor.state_dict(),
@@ -330,6 +373,14 @@ def train_mbppo_variant(
                         "use_behavior_kl": use_behavior_kl,
                         "behavior_kl_coefficient": kl_coefficient,
                         "history": history,
+                        "numpy_rng_state": rng.bit_generator.state,
+                        "torch_rng_state": torch.get_rng_state(),
+                        "cuda_rng_state_all": (
+                            torch.cuda.get_rng_state_all() if device.type == "cuda" else None
+                        ),
+                        "elapsed_time_seconds": previous_elapsed
+                        + time.perf_counter()
+                        - training_started,
                         "world_model_checkpoint": str(world_model_checkpoint),
                         "official_bc_checkpoint": str(bc_checkpoint),
                         "source": {
@@ -340,6 +391,7 @@ def train_mbppo_variant(
                         "config": config,
                     }
                     torch.save(payload, checkpoint_path)
+                    _write_history(root / variant_outputs["training_history_csv"], history)
                     if step == gradient_steps:
                         final_checkpoint.parent.mkdir(parents=True, exist_ok=True)
                         torch.save(payload, final_checkpoint)

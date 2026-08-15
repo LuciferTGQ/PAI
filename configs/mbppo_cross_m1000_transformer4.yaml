@@ -1,0 +1,28 @@
+seed: 42
+sources: {neorl_v2_paper: https://arxiv.org/abs/2102.00714, ppo_paper: https://arxiv.org/abs/1707.06347}
+data: {train_path: data/raw/ib-medium-1000-train.npz}
+policies:
+  official_bc_checkpoint: outputs/checkpoints/official_bc_ib_m1000.pt
+  world_model_checkpoint: outputs/checkpoints/world_model_ib_m1000_transformer4_epoch_040.pt
+  device: cuda
+model: {hidden_size: 256, hidden_layers: 2}
+training:
+  learning_rate: 0.0003
+  gradient_steps: 5000
+  rollout_horizon: 10
+  start_states_per_collection: 256
+  batch_size: 256
+  ppo_epochs_per_collection: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_ratio: 0.2
+  entropy_coefficient: 0.0
+  behavior_kl_coefficient: 1.0
+  max_grad_norm: 0.5
+  checkpoint_interval: 500
+  log_interval: 100
+outputs:
+  with_kl:
+    checkpoint_dir: outputs/checkpoints/mbppo_cross_m1000_transformer4_with_kl
+    final_checkpoint: outputs/checkpoints/mbppo_cross_m1000_transformer4_with_kl_final.pt
+    training_history_csv: outputs/metrics/mbppo_cross_m1000_transformer4_with_kl_training.csv

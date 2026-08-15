@@ -1,0 +1,44 @@
+seed: 42
+policies:
+  device: cuda
+  official_bc_checkpoint: outputs/checkpoints/official_bc_ib_m1000.pt
+  selected_systems:
+    M-100:
+      architecture: GRU
+      checkpoint: outputs/checkpoints/world_model_ib_m100_gru_epoch_035.pt
+      strategy: CEM
+    M-1000:
+      architecture: Transformer-2L
+      checkpoint: outputs/checkpoints/world_model_ib_m1000_transformer2_fair_epoch_020.pt
+      strategy: MPPI
+    M-10000:
+      architecture: Transformer-2L
+      checkpoint: outputs/checkpoints/world_model_ib_m10000_transformer2_fair_epoch_004.pt
+      strategy: MPPI
+evaluation:
+  role: final_fresh_seed_selected_systems
+  seeds: [100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
+  episode_horizon: 1000
+  development_selection_source: outputs/metrics/main_system_matrix_development.json
+  selection_or_tuning_on_final_seeds: false
+cem:
+  horizon: 10
+  population: 64
+  elites: 8
+  iterations: 2
+  initial_std: 0.35
+  min_std: 0.05
+  action_low: [-1.0, -1.0, -1.0]
+  action_high: [1.0, 1.0, 1.0]
+mppi:
+  horizon: 10
+  num_samples: 512
+  noise_std: [0.15, 0.15, 0.15]
+  temperature: 100.0
+  action_low: [-1.0, -1.0, -1.0]
+  action_high: [1.0, 1.0, 1.0]
+outputs:
+  metrics_json: outputs/metrics/final_selected_systems_fresh_seeds.json
+  episodes_csv: outputs/metrics/final_selected_systems_fresh_seeds_episodes.csv
+  timesteps_csv: outputs/metrics/final_selected_systems_fresh_seeds_timesteps.csv
+  summary_csv: outputs/metrics/final_selected_systems_fresh_seeds_summary.csv
