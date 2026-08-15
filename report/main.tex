@@ -102,21 +102,21 @@
 \cref{tab:per_variable}补充 M1000 最终选定世界模型在不同物理变量上的误差累积情况。
 \input{generated/table_per_variable}
 
-$\mathrm{H}_k$ 是第 $k$ 个递归预测时间步上的误差，而不是从第1步到第 $k$ 步误差的求和。因此变量级指标不要求随 $k$ 单调增加。例如，正式指标中增益变量的 H20 为0.292，H50 为0.012；已核对评价代码按固定变量顺序分别读取对应时间步的预测与真实值，该结果保持原始计算值。
+值得注意的是，增益变量在 H50 时的 NRMSE 为0.012，明显低于 H20 时的0.292。由于 $\mathrm{H}_k$ 表示第 $k$ 个递归预测时刻的误差，而不是前 $k$ 步误差的累加，因此变量级误差无需随预测步长单调增加。这也反映出不同物理变量在长时域递归预测中的误差演化具有不同特征。
 
 \subsection{数据规模与训练设置}
 \label{sec:appendix_training}
 \cref{tab:data_scales}汇总三个正式训练集的轨迹数、可用状态转移数与统一架构比较所采用的训练轮数。
 \input{generated/table_data_scales}
 
-不同数据规模的一个 epoch 包含完全不同的数据量，不能仅按轮数横向判断训练是否充分。M100、M1000和M10000每轮分别暴露100,000、1,000,000和10,000,000个状态转移。各模型均按预设训练预算完整训练，并从保存的候选 checkpoint 中依据统一验证的单步与多步预测表现选择参数。部分模型在训练后期仍能降低训练误差，但验证误差未继续同步改善，因此最终采用中间 checkpoint，而不是机械使用最后一轮参数。
+不同数据规模的一个 epoch 包含完全不同的数据量，不能仅按轮数横向判断训练是否充分。M100、M1000和M10000每轮分别暴露100,000、1,000,000和10,000,000个状态转移。各模型均按预设训练预算完整训练，并从保存的候选 checkpoint 中依据统一验证的单步与多步预测表现选择参数。部分模型在训练后期仍能继续降低训练误差，但验证性能没有同步改善，因此最终依据统一验证结果选择中间 checkpoint。
 
 \input{generated/table_training_sufficiency}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.96\textwidth]{fig9_training_sufficiency.pdf}
-  \caption{\textbf{代表性正式训练过程与候选 checkpoint 评价。} \textbf{a}，M1000 Transformer-2L 的50轮训练历史。训练 MSE 随训练持续下降，而验证 MSE 在前期进入较低区间后未继续同步改善，并在后期呈现波动和部分回升。\textbf{b}，统一验证中实际保存并评价的候选 checkpoint；标记表示真实评价点，连线仅辅助观察。虚线标出架构内最终采用的第20轮 checkpoint。继续降低训练误差没有带来稳定的验证收益，最终 checkpoint 仍依据前文统一验证中的单步和多步递归预测表现确定。}
+  \caption{\textbf{代表性正式训练过程与候选 checkpoint 评价。} \textbf{a}，M1000 Transformer-2L 的50轮训练历史。训练 MSE 随训练持续下降，而验证 MSE 在前期进入较低区间后未继续同步改善，并在后期呈现波动和部分回升。\textbf{b}，统一验证中实际保存并评价的候选 checkpoint，虚线标出架构内最终采用的第20轮 checkpoint。继续降低训练误差没有带来稳定的验证收益，最终 checkpoint 仍依据前文统一验证中的单步和多步递归预测表现确定。}
   \label{fig:training_sufficiency}
 \end{figure}
 

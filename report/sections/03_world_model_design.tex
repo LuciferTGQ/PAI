@@ -24,6 +24,6 @@ NRMSE 越低表示预测误差越小。本文将上述统一数据、样本筛�
   \item 找到该数据规模下最低的单步 NRMSE；
   \item 保留单步 NRMSE 不超过最优值1.10倍的候选模型；
   \item 在候选模型中最小化 $\mathrm{mean}(\mathrm{H5},\mathrm{H10},\mathrm{H20})$；
-  \item 将 H50 作为更长时间递归稳定性诊断，不单独用于选择模型。
+  \item 同时参考 H50 观察更长时域下的递归稳定性。
 \end{enumerate}
 该规则先排除单步预测明显不合格的模型，再比较短中期递归预测的稳定性。CEM、iCEM、MPPI、MB-PPO 的仿真奖励均不进入世界模型选择流程。
