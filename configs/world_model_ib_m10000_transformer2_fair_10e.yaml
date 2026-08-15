@@ -1,0 +1,32 @@
+seed: 42
+data:
+  train_path: data/cache/ib-medium-10000-train
+  val_path: data/raw/ib-medium-1000-val.npz
+  history_len: 30
+  frame_dim: 6
+  action_dim: 3
+  audit_cache: data/cache/ib-medium-10000-audit.json
+  normalization_cache: data/cache/ib-medium-10000-normalization.json
+model:
+  type: transformer
+  d_model: 64
+  nhead: 4
+  num_layers: 2
+  dim_feedforward: 128
+  dropout: 0.1
+training:
+  device: cuda
+  batch_size: 512
+  epochs: 10
+  learning_rate: 0.0003
+  weight_decay: 0.00001
+  gradient_clip: 1.0
+  num_workers: 0
+  mixed_precision: true
+  patience: 10
+  checkpoint_interval: 1
+outputs:
+  checkpoint: outputs/checkpoints/world_model_ib_m10000_transformer2_fair_best.pt
+  last_checkpoint: outputs/checkpoints/world_model_ib_m10000_transformer2_fair_last.pt
+  training_history_csv: outputs/metrics/world_model_ib_m10000_transformer2_fair_training.csv
+  training_curve: outputs/figures/world_model_ib_m10000_transformer2_fair_training.png

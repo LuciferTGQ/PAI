@@ -15,6 +15,9 @@ from src.world_model.trainer import train_from_config
 
 
 DEFAULT_CONFIGS = [
+    "configs/world_model_ib_m100_transformer2_fair_50e.yaml",
+    "configs/world_model_ib_m1000_transformer2_fair_50e.yaml",
+    "configs/world_model_ib_m10000_transformer2_fair_10e.yaml",
     "configs/world_model_ib_m100_mlp_50e.yaml",
     "configs/world_model_ib_m100_gru_50e.yaml",
     "configs/world_model_ib_m100_lstm_50e.yaml",

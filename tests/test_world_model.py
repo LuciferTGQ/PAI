@@ -11,7 +11,7 @@ from src.world_model.model import (
 )
 from src.world_model.trainer import train_from_config
 from src.evaluation.checkpoint_selection import select_by_validation_protocol
-from src.evaluation.checkpoint_selection import _one_step_nrmse
+from src.evaluation.checkpoint_selection import _multi_step_nrmse, _one_step_nrmse
 
 
 def test_temporal_transformer_shape() -> None:
@@ -175,3 +175,29 @@ def test_common_nrmse_denominator_can_be_fixed_across_models() -> None:
     )
     assert model_scaled == 0.5
     assert fixed_scaled == 1.0
+
+
+def test_multistep_nrmse_returns_per_variable_metrics() -> None:
+    class FakeWorldModel:
+        frame_dim = 6
+        stats = SimpleNamespace(target_std=np.ones(6, dtype=np.float32))
+
+        def predict_next_frame(self, observations, actions):
+            return np.zeros((len(observations), 6), dtype=np.float32)
+
+    validation = {
+        "obs": np.zeros((60, 180), dtype=np.float32),
+        "action": np.zeros((60, 3), dtype=np.float32),
+        "next_obs": np.ones((60, 180), dtype=np.float32),
+        "index": np.array([60]),
+    }
+    overall, per_variable, rollout_starts = _multi_step_nrmse(
+        FakeWorldModel(),
+        validation,
+        horizons=(1, 5, 10, 20, 50),
+        stride=1,
+        batch_size=4,
+    )
+    assert rollout_starts == 11
+    assert all(value == 1.0 for value in overall.values())
+    assert all(np.array_equal(value, np.ones(6)) for value in per_variable.values())

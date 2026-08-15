@@ -17,7 +17,7 @@ from src.data.ib_dataset import load_ib_npz, trajectory_spans, validate_ib_seman
 from src.world_model.interface import FrozenWorldModel
 
 
-ROLLOUT_HORIZONS = (5, 10, 20, 50)
+ROLLOUT_HORIZONS = (1, 5, 10, 20, 50)
 SELECTION_HORIZONS = (5, 10, 20)
 ONE_STEP_TOLERANCE = 1.10
 
@@ -74,19 +74,25 @@ def _one_step_nrmse(
     val_data: Dict[str, np.ndarray],
     batch_size: int,
     nrmse_std: np.ndarray | None = None,
-) -> float:
+    return_per_variable: bool = False,
+) -> float | tuple[float, np.ndarray]:
     denominator = world_model.stats.target_std if nrmse_std is None else nrmse_std
-    squared_normalized_errors = []
+    squared_sum = np.zeros(world_model.frame_dim, dtype=np.float64)
+    sample_count = 0
     for start in range(0, len(val_data["obs"]), batch_size):
         stop = min(start + batch_size, len(val_data["obs"]))
         predicted = world_model.predict_next_frame(
             val_data["obs"][start:stop], val_data["action"][start:stop]
         )
         actual = val_data["next_obs"][start:stop, : world_model.frame_dim]
-        squared_normalized_errors.append(
-            np.square((predicted - actual) / denominator)
-        )
-    return float(np.sqrt(np.concatenate(squared_normalized_errors).mean()))
+        normalized_squared = np.square((predicted - actual) / denominator)
+        squared_sum += normalized_squared.sum(axis=0, dtype=np.float64)
+        sample_count += len(actual)
+    per_variable = np.sqrt(squared_sum / sample_count)
+    overall = float(
+        np.sqrt(squared_sum.sum() / (sample_count * world_model.frame_dim))
+    )
+    return (overall, per_variable) if return_per_variable else overall
 
 
 def _multi_step_nrmse(
@@ -97,7 +103,7 @@ def _multi_step_nrmse(
     batch_size: int,
     max_rollout_starts: int | None = None,
     nrmse_std: np.ndarray | None = None,
-) -> tuple[Dict[int, float], int]:
+) -> tuple[Dict[int, float], Dict[int, np.ndarray], int]:
     horizons = tuple(sorted(int(value) for value in horizons))
     max_horizon = max(horizons)
     spans = trajectory_spans(val_data["index"], len(val_data["obs"]))
@@ -114,7 +120,11 @@ def _multi_step_nrmse(
     if max_rollout_starts is not None and len(starts) > max_rollout_starts:
         positions = np.linspace(0, len(starts) - 1, max_rollout_starts, dtype=np.int64)
         starts = starts[positions]
-    squared_errors: Dict[int, list[np.ndarray]] = {horizon: [] for horizon in horizons}
+    squared_sums = {
+        horizon: np.zeros(world_model.frame_dim, dtype=np.float64)
+        for horizon in horizons
+    }
+    sample_counts = {horizon: 0 for horizon in horizons}
     denominator = world_model.stats.target_std if nrmse_std is None else nrmse_std
     for batch_start in range(0, len(starts), batch_size):
         indices = starts[batch_start : batch_start + batch_size]
@@ -124,19 +134,28 @@ def _multi_step_nrmse(
                 histories, val_data["action"][indices + step]
             )
             horizon = step + 1
-            if horizon in squared_errors:
+            if horizon in squared_sums:
                 actual = val_data["next_obs"][indices + step, : world_model.frame_dim]
-                squared_errors[horizon].append(
-                    np.square((predicted - actual) / denominator)
-                )
+                normalized_squared = np.square((predicted - actual) / denominator)
+                squared_sums[horizon] += normalized_squared.sum(axis=0, dtype=np.float64)
+                sample_counts[horizon] += len(actual)
             histories = np.concatenate(
                 (predicted, histories[:, : -world_model.frame_dim]), axis=1
             )
-    metrics = {
-        horizon: float(np.sqrt(np.concatenate(values).mean()))
-        for horizon, values in squared_errors.items()
+    per_variable = {
+        horizon: np.sqrt(squared_sums[horizon] / sample_counts[horizon])
+        for horizon in horizons
     }
-    return metrics, int(len(starts))
+    metrics = {
+        horizon: float(
+            np.sqrt(
+                squared_sums[horizon].sum()
+                / (sample_counts[horizon] * world_model.frame_dim)
+            )
+        )
+        for horizon in horizons
+    }
+    return metrics, per_variable, int(len(starts))
 
 
 def evaluate_checkpoint(
@@ -153,8 +172,10 @@ def evaluate_checkpoint(
     started = time.perf_counter()
     metadata = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     world_model = FrozenWorldModel(checkpoint_path, device=device)
-    one_step = _one_step_nrmse(world_model, val_data, batch_size, nrmse_std)
-    multi_step, rollout_starts = _multi_step_nrmse(
+    one_step, one_step_per_variable = _one_step_nrmse(
+        world_model, val_data, batch_size, nrmse_std, return_per_variable=True
+    )
+    multi_step, rollout_per_variable, rollout_starts = _multi_step_nrmse(
         world_model,
         val_data,
         ROLLOUT_HORIZONS,
@@ -169,11 +190,31 @@ def evaluate_checkpoint(
             sum(parameter.numel() for parameter in world_model.model.parameters()),
         )
     )
+    variable_names = (
+        "setpoint",
+        "velocity",
+        "gain",
+        "shift",
+        "fatigue",
+        "consumption",
+    )
+    per_variable_metrics = {
+        name: {
+            "one_step_NRMSE": float(one_step_per_variable[index]),
+            **{
+                f"NRMSE_H{horizon}": float(rollout_per_variable[horizon][index])
+                for horizon in ROLLOUT_HORIZONS
+            },
+        }
+        for index, name in enumerate(variable_names[: world_model.frame_dim])
+    }
     result: Dict[str, Any] = {
         "architecture": architecture,
         "epoch": int(metadata["epoch"]),
         "checkpoint": _relative_path(checkpoint_path, root),
+        "seed": int(metadata.get("seed", 0)),
         "parameter_count": parameter_count,
+        "training_seconds": float(metadata.get("elapsed_training_seconds", float("nan"))),
         "one_step_NRMSE": one_step,
         **{f"NRMSE_H{horizon}": value for horizon, value in multi_step.items()},
         "mean_NRMSE_H5_H10_H20": float(
@@ -181,7 +222,11 @@ def evaluate_checkpoint(
         ),
         "rollout_starts": rollout_starts,
         "evaluation_seconds": time.perf_counter() - started,
+        "per_variable_metrics": per_variable_metrics,
     }
+    for variable_name, metrics in per_variable_metrics.items():
+        for metric_name, value in metrics.items():
+            result[f"{metric_name}_{variable_name}"] = value
     del world_model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
