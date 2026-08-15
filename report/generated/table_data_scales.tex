@@ -1,0 +1,16 @@
+
+\begin{table}[H]
+\centering
+\caption{数据规模与统一架构比较的训练设置。每条轨迹均包含1000个连续控制时间步。}
+\label{tab:data_scales}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+数据规模 & 训练轨迹数 & 每轨迹转移数 & 可用状态转移数 & 正式训练轮数 \\
+\midrule
+M100 & 100 & 1,000 & 100,000 & 50 \\
+M1000 & 1,000 & 1,000 & 1,000,000 & 50 \\
+M10000 & 10,000 & 1,000 & 10,000,000 & 10 \\
+\bottomrule
+\end{tabular}
+\end{table}

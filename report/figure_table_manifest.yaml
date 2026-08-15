@@ -30,12 +30,12 @@ figures:
     archetype: quantitative grid
     question: 为什么单步准确率不足以评价递归使用的世界模型？
     sources: [outputs/metrics/world_model_5x3_common_validation_models.csv]
-    controls: 固定 M1000，只显示1、5、10、20、50步真实评价结果，不插值、不平滑。
+    controls: 固定 M1000，在1、5、10、20、50步递归预测条件下统一评价。
     conclusion: 单步误差相近的模型在长递归预测中可明显分离。
     exports: [pdf, svg, png]
 
   - id: fig4_representative_rollout
-    title: 代表性 H50 轨迹
+    title: 代表性50步递归预测轨迹
     decision: figure
     archetype: quantitative grid
     question: 关键工业变量的递归预测偏差如何随时间演化？
@@ -87,6 +87,7 @@ figures:
       - outputs/metrics/mbppo_ib_m1000_gru_without_kl_training.csv
     controls: 固定世界模型、初始化、想象轨迹和 PPO 设置，仅改变行为 KL 约束。
     conclusion: 无 KL 约束时策略偏离显著扩大，并伴随严重性能退化。
+    axis_note: KL 散度纵轴采用对数型尺度，并在接近零处保留线性区间。
     exports: [pdf, svg, png]
 
 tables:
@@ -114,10 +115,17 @@ tables:
     title: 变量级预测误差
     decision: appendix_table
     reason: 支持变量误差差异结论，但不打断正文主线。
+  - id: tab_all_world_models
+    title: 完整世界模型预测结果
+    decision: appendix_table
+    reason: 提供5种架构乘3个数据规模的15组完整数值，便于读者核查热图。
+  - id: tab_data_scales
+    title: 数据规模与训练设置
+    decision: appendix_table
+    reason: 明确轨迹数量、每轨迹转移数、可用状态转移数和正式训练轮数。
 
 excluded_visuals:
   - 跨数据规模训练曲线
   - 选定轮次图
   - M10000 十轮训练曲线
   - 运行时间或延迟比较
-  - 插值或平滑后的训练趋势

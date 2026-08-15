@@ -1,0 +1,4 @@
+scale,training_trajectories,transitions_per_trajectory,total_usable_transitions,formal_training_epochs
+M100,100,1000,100000,50
+M1000,1000,1000,1000000,50
+M10000,10000,1000,10000000,10

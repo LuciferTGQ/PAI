@@ -54,6 +54,7 @@ def main() -> None:
         "fig6_world_model_strategy_episodes.csv": 50,
         "fig7_final_evaluation.csv": 1040,
         "fig8_kl_ablation_returns.csv": 10,
+        "dataset_scale_audit.csv": 3,
     }
     observed_rows = {name: row_count(name) for name in expected_rows}
     for name, expected in expected_rows.items():
@@ -100,6 +101,12 @@ def main() -> None:
         r"task\s+coverage",
         r"Task\s+[123]",
         r"PAI Industrial World Model Assessment",
+        r"连接线仅",
+        r"连接线只",
+        r"不包含插值",
+        r"不用于反向",
+        r"确定性优化测试",
+        r"M99(?:9|99)?\b",
     ]
     for pattern in forbidden:
         if re.search(pattern, visible_text, flags=re.IGNORECASE):
@@ -109,7 +116,12 @@ def main() -> None:
         "面向工业过程控制的世界模型",
         "原始行为数据参考值（Original Behavior）",
         "仿真奖励只用于策略优化和最终控制评价",
-        "本文将这一评价方式称为统一验证",
+        "称为统一验证",
+        "归一化均方根误差（Normalized Root Mean Squared Error, NRMSE）",
+        "H5 表示连续预测5个时间步后的误差",
+        "单步 NRMSE 遍历全部验证转移",
+        "100、1000和10000条完整工业轨迹",
+        "补充实验结果",
         "工业应用与部署思考",
         "相对 BC 分别提高14,229、68,282和64,535",
     ]
@@ -131,6 +143,31 @@ def main() -> None:
         failures.append("metrics snapshot does not contain 15 World Model rows")
     if snapshot.get("final_online_episode_rows") != 40:
         failures.append("metrics snapshot does not contain 40 final online episodes")
+
+    with (SOURCE_DATA / "dataset_scale_audit.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        scale_rows = list(csv.DictReader(handle))
+    observed_scales = {
+        row["scale"]: (
+            int(row["training_trajectories"]),
+            int(row["transitions_per_trajectory"]),
+            int(row["total_usable_transitions"]),
+            int(row["formal_training_epochs"]),
+        )
+        for row in scale_rows
+    }
+    expected_scales = {
+        "M100": (100, 1000, 100_000, 50),
+        "M1000": (1000, 1000, 1_000_000, 50),
+        "M10000": (10000, 1000, 10_000_000, 10),
+    }
+    if observed_scales != expected_scales:
+        failures.append(f"dataset scale audit differs: {observed_scales}")
+
+    for filename in ("table_all_world_models.tex", "table_data_scales.tex"):
+        if not (GENERATED / filename).exists():
+            failures.append(f"missing appendix table: {filename}")
 
     audit = {
         "status": "pass" if not failures else "fail",

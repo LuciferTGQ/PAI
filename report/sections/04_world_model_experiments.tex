@@ -9,32 +9,35 @@
   \label{fig:wm_heatmaps}
 \end{figure}
 
-M100 中，GRU 在单步误差合格的候选模型中取得最低短中期综合误差；M1000 与 M10000 则由 Transformer-2L 胜出。结果表明，模型架构与数据规模之间存在交互，不能据此宣称某种架构在所有数据条件下都最优。尤其是 M10000 中 MLP 并未因为数据更多而自动获得更低误差，提示数据覆盖、训练预算和模型表达能力需要共同考虑。
+M100 中，GRU 在单步误差合格的候选模型中取得最低短中期综合误差；M1000 与 M10000 则由 Transformer-2L 胜出。不同数据规模对应的最优架构并不相同，反映出模型结构与可用数据之间存在交互。尤其是 M10000 中 MLP 并未因数据增多而自动获得更低误差，数据覆盖、训练预算和模型表达能力需要结合分析。
 
 \input{generated/table2_selected_world_models}
 
 \subsection{单步预测与多步递归误差}
 
-单步预测只评价在真实历史状态条件下预测下一帧；实际规划会把预测值重新输入模型，因此误差还会改变后续输入分布。\Cref{fig:multistep}固定 M1000，展示五种架构在五个真实评价步数上的结果。图中不包含插值或平滑，连接线仅用于辅助观察。
+单步预测只评价在真实历史状态条件下预测下一帧；实际规划会把预测值重新输入模型，因此误差还会改变后续输入分布。\Cref{fig:multistep}展示五种世界模型在1、5、10、20和50步递归预测条件下的 NRMSE 变化。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\textwidth]{fig3_multistep_error.pdf}
-  \caption{\textbf{M1000 上的多步递归预测误差累积。} 标记点对应1、5、10、20和50步真实评价结果，连接线只作为视觉辅助。五种架构的短期误差较接近，但在20至50步明显分离；Transformer-2L 的 H5--H20 综合误差最低，而 Transformer-4L 的 H50 误差更低。}
+  \caption{\textbf{M1000 上的多步递归预测误差累积。} 五种架构的短期误差较接近，但在20至50步明显分离；Transformer-2L 的 H5--H20 综合误差最低，而 Transformer-4L 的 H50 误差更低。}
   \label{fig:multistep}
-\end{figure}
-
-不同物理变量的误差累积速度存在明显差异，完整变量级结果移至附录A。\Cref{fig:rollout}保留速度、疲劳度和能耗三类代表性变量：速度反映动态控制状态，疲劳度和能耗则直接进入奖励函数。为避免只展示表现最好的样本，从候选验证轨迹中选择预测误差接近中位数的轨迹作为代表。
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.94\textwidth]{fig4_representative_rollout.pdf}
-  \caption{\textbf{代表性的 H50 多步递归预测轨迹。} \textbf{a--c} 分别展示速度、疲劳度和能耗的真实状态与模型预测。该轨迹的预测误差接近候选验证轨迹的中位数，不代表最好或最差情况。短期趋势能够跟随真实状态，但不同变量的偏差以不同方式累积；总体结论仍以全部验证轨迹的 NRMSE 为准。}
-  \label{fig:rollout}
 \end{figure}
 
 \subsection{Transformer 深度消融}
 
 \input{generated/table3_depth_ablation}
 
-M100 中，4L 改善了多步综合误差但单步略差；M1000 中，4L 的 H50 更低，但 H5--H20 综合误差反而更高；M10000 中，4L 单步更好，却在 H20 与综合指标上落后 2L。现有结果没有显示层数增加会随数据规模扩大而稳定增强预测性能，因此不足以支持继续增加深度。
+M100 中，4L 改善了多步综合误差但单步略差；M1000 中，4L 的 H50 更低，但 H5--H20 综合误差反而更高；M10000 中，4L 单步更好，却在 H20 与综合指标上落后 2L。三个规模没有呈现随数据增加而稳定增强的深度收益，当前设置下继续增加层数缺少直接实验依据。
+
+\clearpage
+\subsection{代表性长时域预测}
+
+不同物理变量的误差累积速度存在明显差异，完整变量级结果移至附录A。\Cref{fig:rollout}保留速度、疲劳度和能耗三类代表性变量：速度反映动态控制状态，疲劳度和能耗则直接进入奖励函数。为避免只展示表现最好的样本，从候选验证轨迹中选择预测误差接近中位数的轨迹作为代表。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.94\textwidth]{fig4_representative_rollout.pdf}
+  \caption{\textbf{代表性50步递归预测轨迹。} \textbf{a--c} 分别展示速度、疲劳度和能耗的真实状态与模型预测。为避免只展示预测表现最好的样本，从候选验证轨迹中选择预测误差接近中位数的轨迹进行展示。短期趋势能够跟随真实状态，但不同变量的偏差以不同方式累积；总体结论仍以全部验证轨迹的 NRMSE 为准。}
+  \label{fig:rollout}
+\end{figure}

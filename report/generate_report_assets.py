@@ -199,7 +199,6 @@ def figure_2_heatmaps(wm: pd.DataFrame) -> None:
         cbar.ax.tick_params(labelsize=6)
         panel_label(ax, label)
     axes[0].set_ylabel("模型架构")
-    fig.text(0.5, -0.01, "数值越低越好；边框表示各数据规模最终选定的模型", ha="center", fontsize=7, color="#4C5964")
     save_figure(fig, "fig2_world_model_heatmaps")
 
 
@@ -219,7 +218,6 @@ def figure_3_multistep(wm: pd.DataFrame) -> None:
     ax.set_title("M1000：多步递归预测误差累积", fontweight="bold", loc="left")
     ax.grid(axis="y", alpha=0.22)
     ax.legend(ncol=3, loc="upper left")
-    ax.text(0.99, 0.02, "标记点为真实评价结果，连接线仅辅助观察", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.5, color="#4C5964")
     save_figure(fig, "fig3_multistep_error")
 
 
@@ -285,9 +283,7 @@ def figure_4_rollout(trace: pd.DataFrame) -> None:
         panel_label(ax, label)
     axes[0].legend(loc="upper left", ncol=2)
     axes[-1].set_xlabel("递归预测步数")
-    error = float(trace["candidate_rollout_nrmse"].iloc[0])
-    fig.suptitle(f"代表性 H50 多步递归预测轨迹（NRMSE={error:.3f}）", fontsize=10, fontweight="bold")
-    fig.text(0.99, 0.002, "动作来自记录轨迹；所示轨迹的预测误差接近候选轨迹中位数", ha="right", fontsize=6.5, color="#4C5964")
+    fig.suptitle("代表性50步递归预测轨迹", fontsize=10, fontweight="bold")
     save_figure(fig, "fig4_representative_rollout")
 
 
@@ -326,7 +322,6 @@ def figure_5_strategy() -> None:
         panel_label(ax, label)
         ax.set_ylim(-380000, -200000)
     axes[0].set_ylabel("1000步累计奖励（越高越好）")
-    fig.text(0.5, -0.025, "空心点表示每次独立仿真；实心点和误差条表示均值与标准差", ha="center", fontsize=6.7, color="#4C5964")
     fig.tight_layout()
     save_figure(fig, "fig5_strategy_comparison")
 
@@ -353,7 +348,6 @@ def figure_6_cross() -> None:
         panel_label(panel, label)
     axes[0].set_ylim(-355000, -200000)
     axes[1].set_ylim(-291000, -274000)
-    fig.text(0.5, -0.02, "M1000；每个面板内只改变世界模型；每种组合包含5次独立仿真", ha="center", fontsize=6.7, color="#4C5964")
     save_figure(fig, "fig6_world_model_strategy_cross")
 
 
@@ -392,7 +386,6 @@ def figure_7_final() -> None:
     ax.axvline(1.15, color="#AAB0B5", linewidth=1.0, linestyle="--")
     ax.text(0.28, 1.03, "数据集历史表现", transform=ax.transAxes, ha="center", va="bottom", fontsize=7.3, fontweight="bold", color="#5F6B73")
     ax.text(0.72, 1.03, "NeoRL 仿真验证", transform=ax.transAxes, ha="center", va="bottom", fontsize=7.3, fontweight="bold", color="#2A6F69")
-    ax.text(3.5, -295000, "每个空心点表示一次独立仿真", ha="center", va="bottom", fontsize=6.5, color="#4C5964")
     ax.set_title("最终长期控制效果", fontweight="bold", loc="left")
     save_figure(fig, "fig7_final_simulator")
 
@@ -417,7 +410,7 @@ def figure_8_kl() -> None:
     axes[1].plot(hist_with["gradient_step"], hist_with["behavior_kl"], color=STRATEGY_COLORS["MB-PPO"], linewidth=1.4, label="有 KL 约束")
     axes[1].set_yscale("symlog", linthresh=0.1)
     axes[1].set_xlabel("PPO 更新步数")
-    axes[1].set_ylabel(r"策略偏离程度 $D_{KL}(\pi_b\Vert\pi)$")
+    axes[1].set_ylabel(r"策略偏离程度 $D_{KL}(\pi_b\Vert\pi)$\n（对数型尺度）")
     axes[1].set_title("策略与行为策略的偏离", fontweight="bold")
     axes[1].grid(alpha=0.22)
     axes[1].legend()
@@ -576,6 +569,45 @@ def generate_tables(wm: pd.DataFrame) -> None:
 \end{table}
 """
 
+    all_world_model_rows = []
+    ordered_world_models = (
+        wm.assign(
+            scale_order=pd.Categorical(wm["scale"], categories=SCALES, ordered=True),
+            architecture_order=pd.Categorical(
+                wm["architecture"], categories=ARCHITECTURES, ordered=True
+            ),
+        )
+        .sort_values(["scale_order", "architecture_order"])
+    )
+    for _, row in ordered_world_models.iterrows():
+        all_world_model_rows.append(
+            f"{row['scale']} & {row['architecture']} & {int(row['epoch'])} & "
+            f"{row['one_step_NRMSE']:.3f} & {row['NRMSE_H5']:.3f} & "
+            f"{row['NRMSE_H10']:.3f} & {row['NRMSE_H20']:.3f} & "
+            f"{row['NRMSE_H50']:.3f} & {row['mean_NRMSE_H5_H10_H20']:.3f} \\\\"
+        )
+    all_world_models = r"""
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\begin{longtable}{llrrrrrrr}
+\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。}
+\label{tab:all_world_models}\\
+\toprule
+数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+\midrule
+\endfirsthead
+\multicolumn{9}{c}{\tablename\ \thetable\ （续）}\\
+\toprule
+数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+\midrule
+\endhead
+""" + "\n".join(all_world_model_rows) + r"""
+\bottomrule
+\end{longtable}
+\endgroup
+"""
+
     t2 = wm[(wm["scale"] == "M1000") & (wm["architecture"] == "Transformer-2L")].iloc[0]
     variable_names = ["setpoint", "velocity", "gain", "shift", "fatigue", "consumption"]
     variable_labels = {
@@ -608,8 +640,45 @@ def generate_tables(wm: pd.DataFrame) -> None:
 \end{table}
 """
 
+    scale_audit = pd.read_csv(SOURCE_DATA / "dataset_scale_audit.csv").set_index("scale").loc[SCALES]
+    scale_rows = []
+    for scale, row in scale_audit.iterrows():
+        scale_rows.append(
+            f"{scale} & {int(row['training_trajectories']):,} & "
+            f"{int(row['transitions_per_trajectory']):,} & "
+            f"{int(row['total_usable_transitions']):,} & "
+            f"{int(row['formal_training_epochs'])} \\\\"
+        )
+    data_scales = r"""
+\begin{table}[H]
+\centering
+\caption{数据规模与统一架构比较的训练设置。每条轨迹均包含1000个连续控制时间步。}
+\label{tab:data_scales}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+数据规模 & 训练轨迹数 & 每轨迹转移数 & 可用状态转移数 & 正式训练轮数 \\
+\midrule
+""" + "\n".join(scale_rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+
     (GENERATED / "tables.tex").write_text(
-        "\n".join([table1, table2, table3, table4, table5, per_variable]), encoding="utf-8"
+        "\n".join(
+            [
+                table1,
+                table2,
+                table3,
+                table4,
+                table5,
+                all_world_models,
+                per_variable,
+                data_scales,
+            ]
+        ),
+        encoding="utf-8",
     )
     for name, content in (
         ("table1_architectures.tex", table1),
@@ -617,7 +686,9 @@ def generate_tables(wm: pd.DataFrame) -> None:
         ("table3_depth_ablation.tex", table3),
         ("table4_strategy_matrix.tex", table4),
         ("table5_final_evaluation.tex", table5),
+        ("table_all_world_models.tex", all_world_models),
         ("table_per_variable.tex", per_variable),
+        ("table_data_scales.tex", data_scales),
     ):
         (GENERATED / name).write_text(content, encoding="utf-8")
 
@@ -658,13 +729,13 @@ Observation: M1000中五个模型的单步误差接近，但H20和H50明显分�
 
 Interpretation: 小的单步偏差会在递归更新中传播，短中期稳定性需要直接评价。
 
-Limitation: 连接线只辅助观察，不表示未测步数的插值性能。
+Limitation: 图中固定 M1000，其他数据规模可能呈现不同的误差累积形态。
 
-## 图4：代表性H50轨迹
+## 图4：代表性50步轨迹
 
 Question: 代表性连续轨迹上的预测偏差如何随时间演化？
 
-Observation: 所示轨迹的综合NRMSE为{trace['candidate_rollout_nrmse'].iloc[0]:.3f}，速度、疲劳度和能耗呈现不同的偏差累积方式。
+Observation: 速度、疲劳度和能耗呈现不同的偏差累积方式，所示样本的预测误差接近候选验证轨迹的中位数。
 
 Interpretation: 整体NRMSE背后可能包含不同的变量级误差，工业控制需要同时监控关键变量。
 
@@ -678,7 +749,7 @@ Observation: M100的CEM最高（{main[(main.dataset_scale=='M-100') & (main.stra
 
 Interpretation: 规划器能力与世界模型质量共同影响真实控制效果，优化器可能放大低质量模型的误差。
 
-Limitation: 该图不能推出iCEM普遍不适合工业过程。
+Limitation: iCEM 的表现还可能受到模型误差、采样预算和代价尺度共同影响。
 
 ## 图6：世界模型与后续策略
 
@@ -688,7 +759,7 @@ Observation: M1000中MPPI在Transformer-4L上最高（{cross[(cross.architecture
 
 Interpretation: 不同策略可能对世界模型的误差结构具有不同敏感性。
 
-Limitation: 这是当前五种模型、两种策略和一个数据规模上的观察，不是普遍规律。
+Limitation: 当前结果覆盖五种模型、两种策略和一个数据规模，其他设置仍需独立研究。
 
 ## 图7：最终NeoRL控制结果
 
@@ -708,7 +779,7 @@ Observation: 不加KL的平均累计奖励约为-883,709，加KL后为-284,715�
 
 Interpretation: 在当前消融设置中，行为KL约束显著降低了模型利用风险。
 
-Limitation: 消融只覆盖一个世界模型和一次策略训练，不能量化最佳KL系数或保证所有场景都有效。
+Limitation: 消融覆盖一个世界模型和一次策略训练，最合适的KL系数及跨场景稳定性仍需进一步评价。
 """
     (GENERATED / "figure_explanations.md").write_text(notes, encoding="utf-8")
 
@@ -818,7 +889,7 @@ def main() -> None:
     figure_notes(wm, trace)
     export_source_data(wm, trace)
     normalize_generated_text()
-    print(f"generated figures={len(list(FIGURES.glob('*.pdf')))} tables=6")
+    print(f"generated figures={len(list(FIGURES.glob('*.pdf')))} tables=8")
 
 
 if __name__ == "__main__":

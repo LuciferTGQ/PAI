@@ -1,7 +1,7 @@
 \documentclass[11pt,a4paper,fontset=fandol]{ctexart}
 \usepackage[a4paper,margin=22mm,headheight=14pt]{geometry}
 \usepackage{amsmath,amssymb}
-\usepackage{booktabs,tabularx,multirow,threeparttable}
+\usepackage{booktabs,tabularx,longtable,multirow,threeparttable}
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{xcolor}
@@ -42,7 +42,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-本文基于 NeoRL Industrial Benchmark 构建面向工业过程控制的世界模型（World Model）与策略优化流程。针对约100、1000和10000条训练轨迹三种数据规模，比较 MLP、GRU、LSTM、Transformer-2L 和 Transformer-4L 的状态预测能力，并结合单步预测与多步递归预测评价模型；随后使用冻结的世界模型比较 CEM、iCEM、MPPI 和 MB-PPO，在 NeoRL 仿真环境中进行1000步长期控制验证。实验结果显示，小规模数据下 GRU 的综合预测误差最低，中、大规模数据下 Transformer-2L 更优。最终 M100 采用 GRU+CEM，M1000 和 M10000 采用 Transformer-2L+MPPI，1000步累计奖励分别为 $-274{,}181$、$-220{,}129$ 和 $-223{,}876$，相对行为克隆（BC）基础策略分别提高14,229、68,282和64,535。结果表明，所构建的世界模型能够支持后续策略优化，并在当前基准中改善长期控制效果。
+本文基于 NeoRL Industrial Benchmark 构建面向工业过程控制的世界模型（World Model）与策略优化流程。针对100、1000和10000条训练轨迹三种数据规模，比较 MLP、GRU、LSTM、Transformer-2L 和 Transformer-4L 的状态预测能力，并结合单步预测与多步递归预测评价模型；随后使用冻结的世界模型比较 CEM、iCEM、MPPI 和 MB-PPO，在 NeoRL 仿真环境中进行1000步长期控制验证。小规模数据下 GRU 的综合预测误差最低，中、大规模数据下 Transformer-2L 更优。最终 M100 采用 GRU+CEM，M1000 和 M10000 采用 Transformer-2L+MPPI，1000步累计奖励分别为 $-274{,}181$、$-220{,}129$ 和 $-223{,}876$，相对行为克隆（BC）基础策略分别提高14,229、68,282和64,535。所构建的世界模型能够支持后续策略优化，并在当前基准中改善长期控制效果。
 \end{abstract}
 \clearpage
 \tableofcontents
@@ -89,10 +89,23 @@
 \input{sections/10_conclusion}
 
 \appendix
-\section{变量级预测误差}
+\section{补充实验结果}
+\label{sec:appendix_results}
+
+\subsection{完整世界模型预测结果}
+\label{sec:appendix_world_models}
+正文通过热图突出架构、数据规模与预测长度之间的主要关系，\cref{tab:all_world_models}列出15组正式世界模型的完整数值，便于核查具体差异。
+\input{generated/table_all_world_models}
+
+\subsection{变量级预测误差}
 \label{sec:appendix_variables}
-完整变量级结果用于补充说明不同物理变量的误差累积差异，不作为正文的主要模型排序依据。
+\cref{tab:per_variable}补充 M1000 最终选定世界模型在不同物理变量上的误差累积情况。
 \input{generated/table_per_variable}
+
+\subsection{数据规模与训练设置}
+\label{sec:appendix_training}
+\cref{tab:data_scales}汇总三个正式训练集的轨迹数、可用状态转移数与统一架构比较所采用的训练轮数。
+\input{generated/table_data_scales}
 
 \input{generated/references}
 \end{document}
