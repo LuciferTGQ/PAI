@@ -1,0 +1,21 @@
+\subsection{State, action and transition}
+
+NeoRL Industrial Benchmark中的观测为180维向量，可重排为30个历史帧，每帧包含6个物理变量：setpoint、velocity、gain、shift、fatigue和consumption。动作 $a_t\in[-1,1]^3$ 是三维连续控制量。令单帧为 $x_t\in\mathbb{R}^{6}$，历史窗口为 $x_{t-29:t}$，World Model学习
+\begin{equation}
+  \left(x_{t-29:t},a_t\right)\longmapsto \hat{x}_{t+1}.
+\end{equation}
+预测下一帧后，将 $\hat{x}_{t+1}$ 放入窗口最前端并移除最旧帧，得到下一次递归预测所需的180维状态。这个滑动窗口使所有架构具有一致输入输出：$[B,30,6]$ history与$[B,3]$ action映射到$[B,6]$ next frame。
+
+\subsection{Reward and evaluation roles}
+
+NeoRL的classic industrial reward为
+\begin{equation}
+  r_{t+1}=-\left(3\,\mathrm{fatigue}_{t+1}+\mathrm{consumption}_{t+1}\right).
+\end{equation}
+因此，降低设备疲劳和资源消耗会使reward变得更高（更不负）。本文报告1000步episode cumulative reward。需要强调的是，simulator reward只用于策略优化与最终控制评价，绝不参与World Model checkpoint或架构选择。
+
+\subsection{Original Behavior reference}
+
+原始行为数据参考值（Original Behavior）按如下方式定义：NeoRL数据集中的历史轨迹由原始行为策略采集。由于公开数据未提供可直接重新部署该采集策略的策略权重，本文统计数据集中已有轨迹的累计奖励作为原始行为水平参考；BC及世界模型优化策略则统一部署到NeoRL simulator中评估。因此Original Behavior用于描述原始数据行为水平，不与在线策略做严格的同seed配对统计。该区分也符合NeoRL强调数据分布、行为策略和部署验证应被谨慎区分的初衷\cite{qin2022neorl}。
+
+三个数据规模M100、M1000与M10000分别提供不同数量级的历史轨迹。跨规模比较不以raw epoch数判断训练充分性，因为不同规模的一轮训练对应不同样本数量；报告只比较统一common-validation上的最终预测指标。

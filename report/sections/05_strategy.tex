@@ -1,0 +1,24 @@
+\subsection{Model-Based Planning}
+
+Model-Based Planning在每个simulator step利用冻结World Model评估候选动作序列，只执行最前面的动作，然后根据新观测重新规划。
+
+\begin{itemize}
+  \item \textbf{CEM}：从参数化动作分布采样，保留高回报elite序列，并迭代更新均值和方差。它是一种不依赖梯度的轨迹优化方法。
+  \item \textbf{iCEM}：在CEM基础上加入temporal colored noise、elite reuse、previous-solution shift和population decay等机制，以更少样本复用过去规划信息\cite{pinneri2021icem}。
+  \item \textbf{MPPI}：基于路径积分和importance weighting，对大量带噪动作序列按预测cost赋权，再更新控制序列\cite{williams2017mppi}。通俗地说，它不是只保留少数elite，而是让更优样本获得更高权重。
+\end{itemize}
+
+三种方法均使用H=10作为主horizon，并遵守$[-1,1]^3$动作约束。World Model全程冻结，规划结果不能反向修改模型。
+
+\subsection{Model-Based Reinforcement Learning}
+
+MB-PPO在冻结World Model中生成imagined rollout，再用PPO的clipped surrogate objective更新actor和value network\cite{schulman2017ppo}。与每一步都在线搜索的planner不同，MB-PPO把模型中的优化结果压缩到一个可快速推理的policy中。
+
+Behavior KL约束度量当前policy与BC所代表的离线行为分布之间的偏离，并把该偏离加入训练目标。其通俗含义是：即使World Model认为某个数据分布外动作非常有利，policy也不能毫无代价地远离历史行为。\Cref{fig:kl_ablation}使用相同M1000 GRU World Model、初始化、rollout和PPO协议，只改变是否加入behavior KL。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig8_mbppo_kl_ablation.pdf}
+  \caption{\textbf{Behavior-KL ablation for MB-PPO.} \textbf{a}, 相同五个development seeds上的simulator return；空心点为单seed，实心点及误差条为mean $\pm$ population SD。\textbf{b}, 训练期间相对BC的behavior KL。去除KL后policy divergence扩大，平均return由约$-2.85\times10^5$降至$-8.84\times10^5$。该消融支持behavior constraint能抑制当前设置中的model exploitation，但不确定最佳KL系数。}
+  \label{fig:kl_ablation}
+\end{figure}

@@ -1,0 +1,12 @@
+工业过程通常具有长时滞、变量耦合和直接试错成本高等特点。本文从已有工业轨迹出发，学习一个可递归预测未来状态的 World Model，再利用该模型在真实 simulator 交互之前进行动作序列优化或策略学习，最后在 NeoRL Industrial Benchmark 环境中评价1000步累计奖励。整体技术路线如\cref{fig:framework}所示。
+
+本报告严格覆盖三项任务。Task 1研究历史状态与动作到下一状态的预测，并同时评价单步准确率与多步误差累积；Task 2研究两类基于World Model的策略优化，即CEM、iCEM和MPPI组成的Model-Based Planning，以及带behavior KL约束的MB-PPO；Task 3将基础策略和优化策略部署到NeoRL simulator，以episode cumulative reward作为主要控制指标。最后，报告单独讨论实验发现、智能制造应用与真实工业部署风险。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig1_framework.pdf}
+  \caption{\textbf{Overall framework.} 历史轨迹首先用于学习下一帧dynamics；World Model只根据validation prediction metrics选择并冻结。冻结模型随后服务于Model-Based Planning或MB-PPO，策略最终在NeoRL simulator中评价。Simulator reward不会反向参与World Model选择。}
+  \label{fig:framework}
+\end{figure}
+
+该流程的核心控制变量是把``模型预测是否可信''与``策略回报是否更高''分开回答。前者只依赖统一validation；后者在模型和策略配置冻结后才使用simulator。这样既能公平比较架构，也能观察预测性能与控制效用是否一致。

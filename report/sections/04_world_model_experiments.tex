@@ -1,0 +1,44 @@
+\subsection{Architecture $\times$ Data Scale}
+
+正式比较包含5种架构与3个数据规模，共15组World Model。\Cref{fig:wm_heatmaps}用两个annotated heatmap分别回答单步与多步问题；每个单元格都来自同一common-validation protocol，橙色边框表示最终validation选择。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig2_world_model_heatmaps.pdf}
+  \caption{\textbf{Architecture and dataset scale jointly shape dynamics accuracy.} \textbf{a}, one-step NRMSE。\textbf{b}, mean NRMSE at H5/H10/H20。数值越低越好，橙色边框表示validation-only规则选出的模型。M100偏好GRU；M1000和M10000偏好Transformer-2L。两张heatmap的排序并不完全一致，说明单步指标不能替代递归评价。}
+  \label{fig:wm_heatmaps}
+\end{figure}
+
+M100中，GRU在合格one-step候选里取得最低的短中期综合误差；M1000与M10000则由Transformer-2L胜出。该结果不支持``某一架构永远最好''，而是说明时序归纳偏置与数据规模存在交互。尤其是M10000中MLP并未因数据更多而自动获得更好结果，提示数据覆盖、优化预算和架构表达能力需要共同考虑。
+
+\input{generated/table2_selected_world_models}
+
+\subsection{One-step and multi-step prediction}
+
+One-step只评价在真实历史状态条件下预测下一帧；实际规划会把预测值重新输入模型，因此误差会改变后续输入分布。\Cref{fig:multistep}固定M1000并展示五个正式architecture checkpoint在五个真实评价horizon上的结果，不做插值或平滑。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig3_multistep_error.pdf}
+  \caption{\textbf{Recursive prediction error accumulation at M1000.} 五个marker对应H1、H5、H10、H20和H50的真实评价点，连接线只辅助阅读。尽管H1均接近0.2，不同架构在H20--H50明显分离；Transformer-2L在H5--H20综合最好，而Transformer-4L的H50更低。}
+  \label{fig:multistep}
+\end{figure}
+
+Per-variable结果进一步说明overall NRMSE并不等同于每个工业变量都同样准确。Setpoint在该benchmark中较稳定，而velocity、shift、fatigue和consumption的误差演化不同。\Cref{tab:per_variable}列出M1000 Transformer-2L的代表性变量级结果。
+
+\input{generated/table_per_variable}
+
+\Cref{fig:rollout}提供一条直观轨迹。为避免选择最好看的样本，先在101个确定性validation起点上计算H50误差，再选择最接近中位误差的起点；动作来自记录轨迹，只有状态递归使用模型预测。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.94\textwidth]{fig4_representative_rollout.pdf}
+  \caption{\textbf{Representative H50 recursive rollout.} \textbf{a--c}, velocity、fatigue与consumption的ground truth和prediction。该轨迹按预先规定的中位误差规则选择，不代表最好或最差情况。短期趋势可以跟随真实状态，但变量级偏差会以不同方式累积；总体结论仍应以全体validation起点的NRMSE为准。}
+  \label{fig:rollout}
+\end{figure}
+
+\subsection{Transformer depth ablation}
+
+\input{generated/table3_depth_ablation}
+
+M100中4L改善了多步综合误差但单步略差；M1000中4L的H50更低，但H5--H20综合反而更高；M10000中4L单步更好，却在H20与综合指标上落后2L。由此不能得到``层数增加会随数据规模稳定增强''的结论，也没有证据支持继续扩大到6L。这里的重点是严格控制变量后的深度效应，而不是把不同训练预算或旧结果混入比较。

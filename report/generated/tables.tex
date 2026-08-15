@@ -1,0 +1,110 @@
+
+\begin{table}[H]
+\centering
+\caption{World Model architectures. 参数量不随数据规模改变。}
+\label{tab:architectures}
+\small
+\begin{tabularx}{\textwidth}{lXXr}
+\toprule
+Architecture & Temporal modeling & Main configuration & Parameters \\
+\midrule
+MLP & 无显式时序递归 & 2$\times$256 MLP, dropout 0.1 & 114,438 \\
+GRU & 门控递归状态 & 2层, hidden 128, action branch 64 & 177,030 \\
+LSTM & 带记忆单元的递归状态 & 2层, hidden 128, action branch 64 & 227,462 \\
+Transformer-2L & 自注意力历史编码 & $d=64$, 4 heads, FFN 128, 2层 & 91,142 \\
+Transformer-4L & 自注意力历史编码 & $d=64$, 4 heads, FFN 128, 4层 & 158,086 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Validation-only protocol selected World Models. H50仅用于长期稳定性诊断。}
+\label{tab:selected_wm}
+\small
+\begin{tabular}{lllrrrrr}
+\toprule
+Dataset & Architecture & Epoch & One-step & H5 & H10 & H20 & H50 \\
+\midrule
+M100 & GRU & 35 & 0.180 & 0.223 & 0.273 & 0.374 & 0.649 \\
+M1000 & Transformer-2L & 20 & 0.183 & 0.243 & 0.305 & 0.405 & 0.774 \\
+M10000 & Transformer-2L & 4 & 0.205 & 0.258 & 0.298 & 0.293 & 0.510 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Transformer depth ablation. 单元格为 one-step / mean(H5,H10,H20)；差值为4L减2L，负值更优。}
+\label{tab:depth}
+\small
+\begin{tabular}{lccc}
+\toprule
+Scale & Transformer-2L & Transformer-4L & Difference \\
+\midrule
+M100 & 0.179 / 0.470 & 0.182 / 0.425 & +0.003 / -0.044 \\
+M1000 & 0.183 / 0.318 & 0.183 / 0.338 & +0.000 / +0.020 \\
+M10000 & 0.205 / 0.283 & 0.188 / 0.295 & -0.017 / +0.012 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Development strategy matrix (seeds 42--46). 数值为 episode cumulative reward 的 mean $\pm$ population SD，越高越好。}
+\label{tab:strategy_matrix}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+Dataset & CEM & iCEM & MPPI & MB-PPO \\
+\midrule
+M100 & -274,238 $\pm$ 588 & -2,646,910 $\pm$ 4,581 & -348,211 $\pm$ 5,687 & -281,009 $\pm$ 131 \\
+M1000 & -267,826 $\pm$ 407 & -334,597 $\pm$ 4,503 & -221,072 $\pm$ 1,475 & -285,326 $\pm$ 158 \\
+M10000 & -269,218 $\pm$ 411 & -321,264 $\pm$ 36,310 & -223,774 $\pm$ 578 & -285,217 $\pm$ 283 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{Final NeoRL evaluation. Online systems use untouched seeds 100--109. Original Behavior来自数据集已有轨迹，不是同seed在线部署。}
+\label{tab:final}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrr}
+\toprule
+Method/System & Evaluation source & Episode return & $\Delta$ vs BC & Win rate \\
+\midrule
+原始行为数据参考值（Original Behavior） & NeoRL dataset trajectories & -282,885 $\pm$ 1,197 & -- & -- \\
+BC & NeoRL simulator & -288,411 $\pm$ 267 & 0 & -- \\
+M100: GRU + CEM & NeoRL simulator & -274,181 $\pm$ 396 & +14,229 & 100\% \\
+M1000: Transformer-2L + MPPI & NeoRL simulator & -220,129 $\pm$ 1,699 & +68,282 & 100\% \\
+M10000: Transformer-2L + MPPI & NeoRL simulator & -223,876 $\pm$ 1,033 & +64,535 & 100\% \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{M1000 Transformer-2L的per-variable NRMSE。变量的误差积累速度明显不同。}
+\label{tab:per_variable}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Variable & One-step & H20 & H50 \\
+\midrule
+Setpoint & 0.000 & 0.000 & 0.000 \\
+Velocity & 0.029 & 0.310 & 0.704 \\
+Gain & 0.018 & 0.292 & 0.012 \\
+Shift & 0.036 & 0.670 & 1.498 \\
+Fatigue & 0.378 & 0.432 & 0.510 \\
+Consumption & 0.234 & 0.406 & 0.773 \\
+\bottomrule
+\end{tabular}
+\end{table}

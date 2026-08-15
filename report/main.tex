@@ -1,0 +1,96 @@
+\documentclass[11pt,a4paper,fontset=fandol]{ctexart}
+\usepackage[a4paper,margin=22mm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,multirow,threeparttable}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{float}
+\usepackage{placeins}
+
+\definecolor{PAIBlue}{HTML}{3B6FB6}
+\definecolor{PAITeal}{HTML}{2A9D8F}
+\definecolor{PAIOrange}{HTML}{E69F00}
+\definecolor{PAIRed}{HTML}{C44E52}
+\definecolor{PAIGray}{HTML}{5F6B73}
+\hypersetup{colorlinks=true,linkcolor=PAIBlue,citecolor=PAITeal,urlcolor=PAIBlue}
+\graphicspath{{figures/}}
+\captionsetup{font=small,labelfont=bf,justification=justified,singlelinecheck=false}
+\setlist{nosep,leftmargin=1.7em}
+\sisetup{group-separator={,},group-minimum-digits=4,detect-all}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{工业 World Model 简要实验报告}
+\rhead{PAI}
+\cfoot{\thepage}
+
+\title{面向工业过程控制的 World Model：\\预测、策略优化与 NeoRL Simulator 验证}
+\author{PAI Industrial World Model Assessment}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+本文围绕工业历史轨迹上的 World Model 学习、基于模型的策略优化以及 NeoRL simulator 长期控制评价展开。报告严格区分 dynamics validation 与 simulator reward：前者用于选择 World Model，后者仅用于策略优化和最终控制评价。正文比较五类 World Model、三种 model-based planning 方法与带 behavior KL 的 MB-PPO，并在最终未使用种子上验证选定系统。
+\end{abstract}
+\vspace{1em}
+\begin{center}
+\fcolorbox{PAIBlue}{white}{\parbox{0.88\textwidth}{
+\textbf{核心结果。} M100由GRU+CEM获得最佳最终控制结果；M1000与M10000由Transformer-2L+MPPI胜出。三个最终系统在seeds 100--109上相对BC的win rate均为100\%。实验同时表明，one-step prediction、recursive rollout与downstream control utility并不完全等价。
+}}
+\end{center}
+\vfill
+\clearpage
+\tableofcontents
+\clearpage
+
+\section{Introduction / Task Overview}
+\label{sec:intro}
+\input{sections/01_introduction}
+
+\section{Problem Formulation and Data}
+\label{sec:problem}
+\input{sections/02_problem}
+
+\section{World Model Design}
+\label{sec:wm_design}
+\input{sections/03_world_model_design}
+
+\section{World Model Experiments}
+\label{sec:wm_exp}
+\input{sections/04_world_model_experiments}
+
+\section{World-Model-Based Strategy Optimization}
+\label{sec:strategy}
+\input{sections/05_strategy}
+
+\section{NeoRL Strategy Evaluation}
+\label{sec:evaluation}
+\input{sections/06_evaluation}
+
+\section{Discussion：实验发现与思考}
+\label{sec:discussion}
+\input{sections/07_discussion}
+
+\section{Industrial Applications and Deployment Considerations}
+\label{sec:industry}
+\input{sections/08_industry}
+
+\section{Future Research Directions}
+\label{sec:future}
+\input{sections/09_future}
+
+\section{Conclusion and Task Coverage}
+\label{sec:conclusion}
+\input{sections/10_conclusion}
+
+\input{generated/references}
+\end{document}

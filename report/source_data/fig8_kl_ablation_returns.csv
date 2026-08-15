@@ -1,0 +1,11 @@
+condition,seed,episode_return
+without behavior KL,42,-884202.7989509981
+without behavior KL,43,-884053.6307014967
+without behavior KL,44,-883472.4494901372
+without behavior KL,45,-883976.3181359922
+without behavior KL,46,-882838.028077702
+with behavior KL,42,-285032.9112818104
+with behavior KL,43,-284569.127284214
+with behavior KL,44,-284738.06955886574
+with behavior KL,45,-284682.4706929367
+with behavior KL,46,-284551.5237588937

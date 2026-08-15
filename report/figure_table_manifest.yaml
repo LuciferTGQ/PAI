@@ -1,0 +1,144 @@
+report:
+  language: zh-CN
+  format: LaTeX PDF
+  output: output/pdf/pai_industrial_world_model_report.pdf
+  rule: Existing CSV/JSON are the sole quantitative source of truth.
+
+figures:
+  - id: fig1_framework
+    title: Overall framework
+    decision: figure
+    archetype: schematic-led composite
+    question: How do historical industrial trajectories connect World Model learning, strategy optimization, and simulator evaluation?
+    sources:
+      - verified project formulation and frozen experiment protocol
+    controls: Distinguish dynamics validation from simulator strategy evaluation.
+    conclusion: World Models are selected only by dynamics validation before frozen-model control optimization.
+    exports: [pdf, svg, png]
+
+  - id: fig2_world_model_heatmaps
+    title: Architecture by dataset scale
+    decision: figure
+    archetype: quantitative grid
+    question: How do architecture and dataset scale jointly affect one-step and recursive-rollout accuracy?
+    sources:
+      - outputs/metrics/world_model_5x3_common_validation_models.csv
+    controls: Same common-validation metric and within-scale unified protocol; only architecture and data scale vary.
+    conclusion: Architecture ranking depends on data scale, and one-step ranking does not fully determine multi-step ranking.
+    exports: [pdf, svg, png]
+
+  - id: fig3_multistep_error
+    title: Multi-step error accumulation at M1000
+    decision: figure
+    archetype: quantitative grid
+    question: Why is one-step accuracy insufficient for a recursively deployed World Model?
+    sources:
+      - outputs/metrics/world_model_5x3_common_validation_models.csv
+    controls: M1000 fixed; five selected architecture checkpoints; five evaluated horizons only.
+    conclusion: Recursive error trajectories differ substantially even when one-step errors are similar.
+    exports: [pdf, svg, png]
+
+  - id: fig4_representative_rollout
+    title: Representative H50 rollout
+    decision: figure
+    archetype: quantitative grid
+    question: What does recursive prediction drift look like for key industrial variables?
+    sources:
+      - data/raw/ib-medium-1000-val.npz
+      - validation-selected Transformer-2L model at M1000
+    controls: Offline inference only; no retraining; actions follow the recorded validation trajectory; median-error start among deterministic candidate starts.
+    conclusion: Short-term tracking can remain close while variable-specific drift becomes visible later in the rollout.
+    exports: [pdf, svg, png]
+
+  - id: fig5_strategy_matrix
+    title: Strategy comparison across data scales
+    decision: figure
+    archetype: quantitative grid
+    question: Which strategy performs best when each data scale uses its dynamics-selected World Model?
+    sources:
+      - outputs/metrics/main_system_matrix_development_episodes.csv
+    controls: Seeds 42-46, 1000-step episodes, fixed scale-specific World Model, fixed reward definition.
+    conclusion: CEM is strongest at M100, whereas MPPI is strongest at M1000 and M10000; weak models can be exploited.
+    exports: [pdf, svg, png]
+
+  - id: fig6_cross_ablation
+    title: World Model by downstream strategy
+    decision: figure
+    archetype: quantitative grid
+    question: Does dynamics validation ranking completely determine downstream control ranking?
+    sources:
+      - outputs/metrics/world_model_control_cross_m1000_episodes.csv
+      - outputs/metrics/world_model_control_cross_m1000_summary.csv
+    controls: M1000 fixed; MPPI or MB-PPO protocol fixed within each panel; only World Model architecture varies.
+    conclusion: Transformer-4L is best for MPPI, whereas LSTM is best for MB-PPO, despite Transformer-2L leading dynamics validation.
+    exports: [pdf, svg, png]
+
+  - id: fig7_final_simulator
+    title: Final NeoRL simulator evaluation
+    decision: figure
+    archetype: quantitative grid
+    question: Do selected World-Model-based systems improve long-horizon cumulative reward?
+    sources:
+      - outputs/metrics/strategy_ib_m1000.json
+      - outputs/metrics/final_selected_systems_fresh_seeds_episodes.csv
+    controls: Online systems use untouched seeds 100-109 and 1000-step episodes; Original Behavior is explicitly unpaired dataset-trajectory reference.
+    conclusion: Every selected final system beats BC on all ten final simulator seeds.
+    exports: [pdf, svg, png]
+
+  - id: fig8_kl_ablation
+    title: MB-PPO behavior-KL ablation
+    decision: figure
+    archetype: quantitative grid
+    question: Does behavior KL constrain model exploitation during MB-PPO training?
+    sources:
+      - outputs/metrics/strategy_ib_m1000_gru_mbppo.json
+      - outputs/metrics/mbppo_ib_m1000_gru_with_kl_training.csv
+      - outputs/metrics/mbppo_ib_m1000_gru_without_kl_training.csv
+    controls: Same M1000 GRU World Model, initialization, rollout, and PPO protocol; only behavior-KL penalty differs.
+    conclusion: Removing behavior KL causes large policy divergence and severe simulator-return collapse.
+    exports: [pdf, svg, png]
+
+tables:
+  - id: tab1_architectures
+    title: World Model architectures
+    decision: table
+    sources:
+      - configs/world_model_ib_m1000_*_50e.yaml
+      - outputs/metrics/world_model_5x3_common_validation_models.csv
+    reason: Structural mappings and exact parameter counts are clearer in a compact table.
+
+  - id: tab2_selected_world_models
+    title: Selected World Models
+    decision: table
+    sources:
+      - outputs/metrics/world_model_5x3_common_validation_best_world_models.csv
+    reason: Exact epoch and horizon metrics require direct lookup.
+
+  - id: tab3_depth_ablation
+    title: Transformer depth ablation
+    decision: table
+    sources:
+      - outputs/metrics/world_model_5x3_common_validation_transformer_depth.csv
+    reason: Two models by three scales do not justify a trend line.
+
+  - id: tab4_strategy_matrix
+    title: Strategy matrix
+    decision: table
+    sources:
+      - outputs/metrics/main_system_matrix_development_summary.csv
+    reason: Exact mean plus/minus standard deviation complements the seed-level figure.
+
+  - id: tab5_final_evaluation
+    title: Final NeoRL evaluation
+    decision: table
+    sources:
+      - outputs/metrics/strategy_ib_m1000.json
+      - outputs/metrics/final_selected_systems_fresh_seeds_summary.csv
+    reason: Evaluation provenance and delta-versus-BC require explicit textual distinctions.
+
+excluded_visuals:
+  - training curves across dataset scales
+  - selected-epoch plot
+  - M10000 ten-epoch curve
+  - runtime or latency comparison
+  - interpolated or smoothed checkpoint trends

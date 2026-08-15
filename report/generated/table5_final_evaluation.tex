@@ -1,0 +1,19 @@
+
+\begin{table}[H]
+\centering
+\caption{Final NeoRL evaluation. Online systems use untouched seeds 100--109. Original Behavior来自数据集已有轨迹，不是同seed在线部署。}
+\label{tab:final}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrr}
+\toprule
+Method/System & Evaluation source & Episode return & $\Delta$ vs BC & Win rate \\
+\midrule
+原始行为数据参考值（Original Behavior） & NeoRL dataset trajectories & -282,885 $\pm$ 1,197 & -- & -- \\
+BC & NeoRL simulator & -288,411 $\pm$ 267 & 0 & -- \\
+M100: GRU + CEM & NeoRL simulator & -274,181 $\pm$ 396 & +14,229 & 100\% \\
+M1000: Transformer-2L + MPPI & NeoRL simulator & -220,129 $\pm$ 1,699 & +68,282 & 100\% \\
+M10000: Transformer-2L + MPPI & NeoRL simulator & -223,876 $\pm$ 1,033 & +64,535 & 100\% \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,20 @@
+\subsection{Compared architectures}
+
+本文比较五类正式架构。MLP把完整历史窗口展平后进行静态非线性映射；GRU和LSTM通过递归隐状态提取时间依赖，其中GRU使用较简化的门控结构，LSTM使用显式记忆单元；Transformer-2L和Transformer-4L通过self-attention直接建模30帧之间的依赖\cite{vaswani2017attention}。Transformer深度实验只改变层数2到4，$d_{model}$、head数、FFN宽度和dropout保持不变。
+
+\input{generated/table1_architectures}
+
+所有模型共享数据划分、normalization、optimizer、trainer、checkpoint规则和evaluation protocol。不同架构的参数量约为9万至23万，规模足够轻量，便于突出时序归纳偏置而不是单纯扩大容量。
+
+\subsection{Validation metrics and selection}
+
+NRMSE使用固定common-validation目标标准差归一化，使不同架构和数据规模可以在同一口径下比较。评价包括one-step NRMSE，以及使用真实记录动作但递归更新预测状态的H1、H5、H10、H20和H50 NRMSE。Per-variable error用于判断某个整体指标是否被特定物理变量主导。
+
+模型选择只使用validation dynamics：
+\begin{enumerate}
+  \item 找到该数据规模下最低的one-step NRMSE；
+  \item 保留满足 $\mathrm{one\mbox{-}step}\leq1.10\times\mathrm{best\ one\mbox{-}step}$ 的候选；
+  \item 在候选中最小化 $\mathrm{mean}(\mathrm{H5},\mathrm{H10},\mathrm{H20})$；
+  \item H50仅作为长期rollout稳定性诊断。
+\end{enumerate}
+这个规则先排除单步明显不合格的模型，再选择短中期递归预测最稳定者。任何CEM、iCEM、MPPI或MB-PPO simulator reward都不进入上述流程。

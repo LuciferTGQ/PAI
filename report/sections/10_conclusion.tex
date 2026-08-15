@@ -1,0 +1,20 @@
+本次考核建立了从工业历史轨迹到World Model、再到模型驱动策略优化和NeoRL simulator验证的完整链路。Task 1通过五架构、三数据规模的统一common-validation比较，明确回答了单步预测与多步误差累积；Task 2完成CEM、iCEM、MPPI和MB-PPO两类策略优化，并通过behavior KL消融观察到行为约束对抑制model exploitation的重要性；Task 3在1000步NeoRL simulator中完成development控制变量实验和未使用seeds 100--109的最终评价。
+
+最终结果显示：M100由GRU + CEM取得稳定提升，M1000与M10000由Transformer-2L + MPPI取得更大提升，三个系统对BC的final win rate均为100\%。与此同时，实验也揭示one-step accuracy不充分、prediction ranking与control ranking不完全一致、弱模型可能被optimizer利用，以及更多数据不保证downstream return单调上升。这些观察直接引出真实工业部署所需的不确定性评估、安全约束、OOD detection、fallback controller和持续监控。
+
+\begin{table}[H]
+\centering
+\caption{Coverage of the assessment requirements.}
+\label{tab:coverage}
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+Requirement & Evidence & Main result \\
+\midrule
+Task 1: Industrial World Model & \Cref{fig:wm_heatmaps,fig:multistep,tab:selected_wm} & 统一比较one-step与H5--H50 recursive error \\
+Task 2: Strategy optimization & \Cref{fig:strategy_matrix,fig:kl_ablation} & Planning与MB-PPO均完成；KL抑制明显失效 \\
+Task 3: NeoRL Simulator & \Cref{fig:final,tab:final} & 三个final systems均在10个未使用seed上胜过BC \\
+Expected Outcome 4 & \Cref{sec:discussion,sec:industry} & 分析实验发现、工业用途与部署风险 \\
+\bottomrule
+\end{tabularx}
+\end{table}

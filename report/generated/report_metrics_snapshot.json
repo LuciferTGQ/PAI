@@ -1,0 +1,45 @@
+{
+  "world_model_rows": 15,
+  "development_strategy_episode_rows": 65,
+  "controlled_cross_episode_rows": 50,
+  "final_online_episode_rows": 40,
+  "original_behavior_trajectory_rows": 1000,
+  "final_selected_systems": [
+    {
+      "dataset_scale": "M-100",
+      "world_model_architecture": "GRU",
+      "strategy": "CEM",
+      "mean_return": -274181.33429973444,
+      "std_return": 395.6058353505432,
+      "median_return": -274214.13541222946,
+      "mean_delta_vs_bc": 14229.174164963895,
+      "win_rate_vs_bc": 1.0,
+      "mean_runtime_seconds": 22.459026580071075,
+      "mean_model_evaluations": 1280000.0
+    },
+    {
+      "dataset_scale": "M-1000",
+      "world_model_architecture": "Transformer-2L",
+      "strategy": "MPPI",
+      "mean_return": -220128.68709963927,
+      "std_return": 1699.0903738508955,
+      "median_return": -220755.16596088128,
+      "mean_delta_vs_bc": 68281.82136505903,
+      "win_rate_vs_bc": 1.0,
+      "mean_runtime_seconds": 29.09176411998924,
+      "mean_model_evaluations": 5120000.0
+    },
+    {
+      "dataset_scale": "M-10000",
+      "world_model_architecture": "Transformer-2L",
+      "strategy": "MPPI",
+      "mean_return": -223875.51424628776,
+      "std_return": 1032.754030513906,
+      "median_return": -223937.5551284889,
+      "mean_delta_vs_bc": 64534.994218410575,
+      "win_rate_vs_bc": 1.0,
+      "mean_runtime_seconds": 29.915633619972503,
+      "mean_model_evaluations": 5120000.0
+    }
+  ]
+}

@@ -16,6 +16,9 @@ __pycache__/
 ~$*.docx
 *.tmp
 *.log
+*.aux
+*.out
+*.toc
 .env
 .env.*
 !.env.example

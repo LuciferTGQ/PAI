@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "pdf_pages": 15,
+  "figure_count": 8,
+  "source_data_rows": {
+    "fig2_fig3_world_model_metrics.csv": 15,
+    "fig5_strategy_episodes.csv": 65,
+    "fig6_world_model_strategy_episodes.csv": 50,
+    "fig7_final_evaluation.csv": 1040,
+    "fig8_kl_ablation_returns.csv": 10
+  },
+  "selected_world_models": {
+    "M100": "GRU",
+    "M1000": "Transformer-2L",
+    "M10000": "Transformer-2L"
+  },
+  "failures": []
+}

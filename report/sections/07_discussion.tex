@@ -1,0 +1,19 @@
+\subsection{One-step accuracy is not sufficient}
+
+One-step输入始终来自真实历史，而planning和imagined rollout会递归使用模型自己的预测。实验中多个M1000模型的one-step NRMSE非常接近，但H20和H50差距显著；单步最准确的checkpoint也不必然具有最低H5--H20综合误差。因此，面向控制的World Model至少应联合报告one-step与multi-step dynamics，而不能只以one-step loss决定部署。
+
+\subsection{Prediction accuracy and downstream control utility are not identical}
+
+M1000控制变量实验中，dynamics validation选择Transformer-2L；MPPI在Transformer-4L上取得更高development return；MB-PPO则在LSTM上更好。这说明通用prediction error与downstream decision utility可能并不完全一致，而且online planning与learned policy可能对不同类型的模型误差具有不同敏感性。不过，这只是当前五种架构、两类策略和一个数据规模上的实验观察，不能上升为普遍定律，也不应使用simulator reward反向修改World Model选择。
+
+\subsection{Weak World Models can be exploited by optimizers}
+
+M100结果提供了最直接证据：更复杂或采样更积极的optimizer并不保证更可靠。Planner可能发现World Model认为高收益、但真实simulator表现很差的动作区域；当训练数据覆盖不足时，这些动作往往位于模型不可信区域。因而model-based control需要关注``预测是否来自有数据支持的区域''，而不只是optimistic predicted return。
+
+\subsection{More data does not guarantee monotonically better downstream control}
+
+从M100到M1000，最终return显著提高；从M1000到M10000则没有继续单调提高，M1000 + MPPI的最终平均return反而略高。可能原因包括数据覆盖而非数量本身、选定架构的bias、不同规模下的训练步数结构，以及planner对局部误差的敏感性。现有实验能确认``更多数据不自动等于更高控制回报''，但不能把差异唯一归因于某一个因素。
+
+\subsection{Architecture and dataset scale interact}
+
+M100中GRU更有优势，说明递归归纳偏置在较小数据下有效；M1000和M10000中轻量Transformer-2L更强，显示attention在更大覆盖下能够提取有用历史依赖；Transformer-4L没有稳定获得进一步收益。架构选择因此应与可用数据规模、rollout horizon和部署策略共同评价，而不是预设Transformer或循环网络必然获胜。
