@@ -84,21 +84,6 @@ def _total_training_seconds(root: Path, scale: int, suffix: str) -> float:
     return float(rows[-1]["elapsed_seconds"]) if rows else float("nan")
 
 
-def _reuse_m1000(root: Path) -> tuple[list[Dict[str, Any]], Dict[str, Any]]:
-    source_path = root / "outputs" / "metrics" / "world_model_ib_m1000_architecture_selection.json"
-    source = json.loads(source_path.read_text(encoding="utf-8"))
-    records = [
-        {"data_scale": 1000, **record}
-        for record in source["all_checkpoint_metrics"]
-        if record["architecture"] in ARCHITECTURES
-    ]
-    selections = {
-        architecture: source["architecture_selections"][architecture]
-        for architecture in ARCHITECTURES
-    }
-    return records, selections
-
-
 def _extension_needed(scale: int, records: list[Dict[str, Any]], selected_epoch: int) -> bool:
     if scale == 100:
         boundary = 45
@@ -187,7 +172,6 @@ def evaluate_data_scaling(
     max_rollout_starts: int = 10_000,
     architectures: Dict[str, str] | None = None,
     output_prefix: str = "world_model_data_scaling",
-    reuse_m1000_legacy: bool = True,
     candidate_validation_path: str | None = None,
     candidate_fixed_std: bool = False,
 ) -> Dict[str, Any]:
@@ -226,15 +210,6 @@ def evaluate_data_scaling(
         (int(row["data_scale"]), row["architecture"], int(row["epoch"]))
         for row in records
     }
-    if reuse_m1000_legacy and 1000 in scales and not any(key[0] == 1000 for key in keys):
-        reused_records, reused_selections = _reuse_m1000(root)
-        records.extend(reused_records)
-        progress["selections"]["1000"] = reused_selections
-        keys.update(
-            (1000, row["architecture"], int(row["epoch"])) for row in reused_records
-        )
-        _write_json(progress_path, progress)
-
     validation_paths = {
         100: root / "data" / "raw" / "ib-medium-10-val.npz",
         1000: root / "data" / "raw" / "ib-medium-100-val.npz",
@@ -256,8 +231,6 @@ def evaluate_data_scaling(
             shared_fixed_std = shared_fixed_std.astype(np.float32)
             del shared_targets
     for scale in scales:
-        if scale == 1000 and reuse_m1000_legacy:
-            continue
         val_data = (
             shared_validation_data
             if shared_validation_data is not None

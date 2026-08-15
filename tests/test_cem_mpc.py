@@ -3,7 +3,6 @@ import numpy as np
 from src.evaluation.cem_horizon import select_horizon_one_standard_error
 from src.strategy.cem_mpc import CEMMPCPolicy, ib_reward_from_frame
 from src.strategy.icem_mpc import ICEMMPCPolicy, powerlaw_noise
-from src.strategy.mppi_mpc import MPPIMPCPolicy
 
 
 class _FakeWorldModel:
@@ -66,7 +65,7 @@ def test_powerlaw_noise_shape_and_scale() -> None:
     assert 0.2 < float(noise.std()) < 2.0
 
 
-def test_icem_and_mppi_actions_are_bounded() -> None:
+def test_icem_action_is_bounded() -> None:
     base = {
         "horizon": 3,
         "population": 32,
@@ -89,12 +88,5 @@ def test_icem_and_mppi_actions_are_bounded() -> None:
         },
         seed=5,
     )
-    mppi = MPPIMPCPolicy(
-        _FakeWorldModel(),
-        _ZeroPolicy(),
-        {**base, "population": 64, "temperature": 30.0, "noise_std": [0.35] * 3},
-        seed=5,
-    )
-    for policy in (icem, mppi):
-        action = policy.act(np.zeros(180, dtype=np.float32))
-        assert np.all(action >= -1.0) and np.all(action <= 1.0)
+    action = icem.act(np.zeros(180, dtype=np.float32))
+    assert np.all(action >= -1.0) and np.all(action <= 1.0)

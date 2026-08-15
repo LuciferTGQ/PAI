@@ -1,3 +1,0 @@
-dataset_scale,world_model_architecture,world_model_checkpoint,strategy,seed,episode_return,episode_length,action_clipped_fraction,runtime_seconds,planning_seconds,mean_planner_latency_seconds,median_planner_latency_seconds,model_evaluations,mean_effective_sample_size
-M-1000,Transformer-2L,G:/PAI/outputs/checkpoints/world_model_ib_m1000_transformer2_fair_epoch_020.pt,reference_MPPI,42,-219386.85747768224,1000,0.0,25.41182090016082,25.08488589921035,0.02508488589921035,0.02469614997971803,5120000,481.66682284164426
-M-10000,Transformer-2L,G:/PAI/outputs/checkpoints/world_model_ib_m10000_transformer2_fair_epoch_004.pt,reference_MPPI,42,-223305.1138649798,1000,0.0,26.869932800065726,26.533753503346816,0.026533753503346816,0.02597795007750392,5120000,475.32820239830016

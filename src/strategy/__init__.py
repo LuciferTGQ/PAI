@@ -2,13 +2,13 @@
 
 from src.strategy.official_bc import OfficialBCPolicy, OfficialGaussianActor
 from .icem_mpc import ICEMMPCPolicy
-from .mppi_mpc import MPPIMPCPolicy
+from .reference_mppi import ReferenceMPPIPolicy
 from src.strategy.mbppo import MBPPOPolicy
 
 __all__ = [
     "OfficialBCPolicy",
     "OfficialGaussianActor",
     "ICEMMPCPolicy",
-    "MPPIMPCPolicy",
+    "ReferenceMPPIPolicy",
     "MBPPOPolicy",
 ]

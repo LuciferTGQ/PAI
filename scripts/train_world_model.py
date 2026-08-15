@@ -11,8 +11,8 @@ from src.world_model.trainer import train_from_config
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train the IB Temporal Transformer world model")
-    parser.add_argument("--config", default="configs/world_model_ib_m100.yaml")
+    parser = argparse.ArgumentParser(description="Train an IB world model")
+    parser.add_argument("--config", default="configs/world_model_ib_m100_mlp_50e.yaml")
     parser.add_argument("--resume", default=None)
     parser.add_argument("--epochs", type=int, default=None)
     args = parser.parse_args()

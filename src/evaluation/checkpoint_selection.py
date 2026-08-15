@@ -46,18 +46,12 @@ def _deduplicate_by_epoch(paths: Iterable[Path]) -> list[Path]:
 
 def discover_m1000_candidates(root: Path) -> Dict[str, list[Path]]:
     checkpoint_dir = root / "outputs" / "checkpoints"
-    legacy_transformer = [
-        checkpoint_dir / "world_model_ib_m1000.pt",
-        checkpoint_dir / "world_model_ib_m1000_100e_best.pt",
-        checkpoint_dir / "world_model_ib_m1000_100e_last.pt",
-    ]
-    candidates: Dict[str, list[Path]] = {
-        "Transformer-2L": _deduplicate_by_epoch(legacy_transformer)
-    }
+    candidates: Dict[str, list[Path]] = {}
     for architecture, prefix in (
         ("MLP", "world_model_ib_m1000_mlp"),
         ("GRU", "world_model_ib_m1000_gru"),
         ("LSTM", "world_model_ib_m1000_lstm"),
+        ("Transformer-2L", "world_model_ib_m1000_transformer2_fair"),
         ("Transformer-4L", "world_model_ib_m1000_transformer4"),
     ):
         paths = [checkpoint_dir / f"{prefix}_best.pt", checkpoint_dir / f"{prefix}_last.pt"]

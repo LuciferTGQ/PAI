@@ -20,7 +20,6 @@ def main() -> None:
         device=args.device,
         architectures=ARCHITECTURES_5X3,
         output_prefix="world_model_5x3_common_validation",
-        reuse_m1000_legacy=False,
         candidate_validation_path="data/raw/ib-medium-1000-val.npz",
         candidate_fixed_std=True,
     )

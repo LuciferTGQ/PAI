@@ -15,16 +15,20 @@ from src.world_model.trainer import train_from_config
 
 
 DEFAULT_CONFIGS = [
-    "configs/world_model_ib_m100_transformer2_fair_50e.yaml",
-    "configs/world_model_ib_m1000_transformer2_fair_50e.yaml",
-    "configs/world_model_ib_m10000_transformer2_fair_10e.yaml",
     "configs/world_model_ib_m100_mlp_50e.yaml",
     "configs/world_model_ib_m100_gru_50e.yaml",
     "configs/world_model_ib_m100_lstm_50e.yaml",
+    "configs/world_model_ib_m100_transformer2_fair_50e.yaml",
     "configs/world_model_ib_m100_transformer4_50e.yaml",
+    "configs/world_model_ib_m1000_mlp_50e.yaml",
+    "configs/world_model_ib_m1000_gru_50e.yaml",
+    "configs/world_model_ib_m1000_lstm_50e.yaml",
+    "configs/world_model_ib_m1000_transformer2_fair_50e.yaml",
+    "configs/world_model_ib_m1000_transformer4_50e.yaml",
     "configs/world_model_ib_m10000_mlp_10e.yaml",
     "configs/world_model_ib_m10000_gru_10e.yaml",
     "configs/world_model_ib_m10000_lstm_10e.yaml",
+    "configs/world_model_ib_m10000_transformer2_fair_10e.yaml",
     "configs/world_model_ib_m10000_transformer4_10e.yaml",
 ]
 
@@ -51,7 +55,7 @@ def _latest_resume(config_path: Path) -> tuple[Path | None, int, int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Resume-safe M-100/M-10000 World Model matrix")
+    parser = argparse.ArgumentParser(description="Resume-safe 5x3 World Model matrix")
     parser.add_argument("configs", nargs="*", default=DEFAULT_CONFIGS)
     args = parser.parse_args()
     for value in args.configs:

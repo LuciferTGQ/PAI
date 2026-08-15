@@ -1,2 +1,0 @@
-seed,baseline_mse,optimized_mse,mse_ratio,first_action,population_schedule,model_evaluations,passed
-23,0.42249995470046997,0.0012617832254360195,0.002986469492832388,[0.6392008662223816],"[256, 204, 163, 130]",6024,True

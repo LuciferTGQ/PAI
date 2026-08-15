@@ -1,8 +1,0 @@
-# Official martius-lab/iCEM colored-noise dependency.
-colorednoise==2.2.0
-
-# Tested compatibility pin for the fixed NeoRL 0.3.0 simulator code.
-gym==0.26.2
-
-# Mature MPPI reference with neural-network approximate dynamics support.
-pytorch-mppi==0.9.1
