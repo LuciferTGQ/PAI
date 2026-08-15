@@ -1,0 +1,4 @@
+scale,best_h5_h10_h20_architecture,best_h50_architecture,consistent
+M100,GRU,LSTM,False
+M1000,Transformer-2L,Transformer-4L,False
+M10000,Transformer-2L,Transformer-2L,True

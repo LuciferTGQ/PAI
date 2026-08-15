@@ -1,0 +1,16 @@
+
+\begin{table}[H]
+\centering
+\caption{预测时间尺度敏感性。每列均在同一数据规模的五种架构中直接比较 NRMSE，数值越低越优。}
+\label{tab:horizon_sensitivity}
+\small
+\begin{tabular}{lccc}
+\toprule
+数据规模 & H5/H10/H20综合最优架构 & H50最优架构 & 是否一致 \\
+\midrule
+M100 & GRU & LSTM & 否 \\
+M1000 & Transformer-2L & Transformer-4L & 否 \\
+M10000 & Transformer-2L & Transformer-2L & 是 \\
+\bottomrule
+\end{tabular}
+\end{table}

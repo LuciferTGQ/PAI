@@ -90,6 +90,17 @@ figures:
     axis_note: KL 散度纵轴采用对数型尺度，并在接近零处保留线性区间。
     exports: [pdf, svg, png]
 
+  - id: fig9_training_sufficiency
+    title: 正式训练历史与中间 checkpoint
+    decision: figure
+    archetype: quantitative grid
+    question: 正式训练是否完成，以及为什么不机械使用最后一轮参数？
+    sources: [outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv]
+    controls: 使用正式5×3矩阵中的 M1000 Transformer-2L 50轮训练历史；不混入旧100轮实验。
+    conclusion: 训练 MSE 持续下降，而验证 MSE 在中后期趋于饱和并回升，中间 checkpoint 具有必要性。
+    review_risk: 最终选定轮次来自统一验证的单步与多步 NRMSE，而不是仅取验证 MSE 最低点。
+    exports: [pdf, svg, png]
+
 tables:
   - id: tab1_architectures
     title: 世界模型架构
@@ -123,9 +134,26 @@ tables:
     title: 数据规模与训练设置
     decision: appendix_table
     reason: 明确轨迹数量、每轨迹转移数、可用状态转移数和正式训练轮数。
+  - id: tab_horizon_ablation
+    title: CEM 规划长度消融
+    decision: table
+    sources: [outputs/metrics/strategy_ib_m1000_gru_cem_horizons.json]
+    reason: 只有三个候选长度，精确均值、标准差和中位数比折线图更清晰。
+  - id: tab_horizon_sensitivity
+    title: 预测时间尺度敏感性
+    decision: table
+    sources: [outputs/metrics/world_model_5x3_common_validation_models.csv]
+    reason: 三个数据规模下两类最优架构的离散对应关系适合紧凑表格。
+  - id: tab_training_sufficiency
+    title: 最终世界模型训练充分性
+    decision: appendix_table
+    sources:
+      - outputs/metrics/world_model_ib_m100_gru_training.csv
+      - outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv
+      - outputs/metrics/world_model_ib_m10000_transformer2_fair_training.csv
+    reason: 精确对照总轮次、架构内选定轮次及选定/最后训练验证损失。
 
 excluded_visuals:
   - 跨数据规模训练曲线
-  - 选定轮次图
   - M10000 十轮训练曲线
   - 运行时间或延迟比较

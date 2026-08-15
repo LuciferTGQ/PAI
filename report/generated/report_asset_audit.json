@@ -1,13 +1,17 @@
 {
   "status": "pass",
-  "pdf_pages": 17,
-  "figure_count": 8,
+  "pdf_pages": 19,
+  "figure_count": 9,
   "source_data_rows": {
     "fig2_fig3_world_model_metrics.csv": 15,
     "fig5_strategy_episodes.csv": 65,
     "fig6_world_model_strategy_episodes.csv": 50,
     "fig7_final_evaluation.csv": 1040,
     "fig8_kl_ablation_returns.csv": 10,
+    "fig9_training_history.csv": 50,
+    "table_horizon_ablation.csv": 3,
+    "table_horizon_sensitivity.csv": 3,
+    "table_training_sufficiency.csv": 3,
     "dataset_scale_audit.csv": 3
   },
   "selected_world_models": {

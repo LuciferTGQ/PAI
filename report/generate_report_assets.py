@@ -418,6 +418,146 @@ def figure_8_kl() -> None:
     save_figure(fig, "fig8_mbppo_kl_ablation")
 
 
+def horizon_ablation_data() -> pd.DataFrame:
+    payload = json.loads(
+        (ROOT / "outputs/metrics/strategy_ib_m1000_gru_cem_horizons.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    selected_horizon = int(payload["selection"]["selected_horizon"])
+    selected_mean = float(
+        payload["horizons"][str(selected_horizon)]["summary"]["mean"]
+    )
+    rows = []
+    for horizon_text, record in payload["horizons"].items():
+        summary = record["summary"]
+        horizon = int(horizon_text)
+        rows.append(
+            {
+                "horizon": horizon,
+                "episodes": int(summary["episodes"]),
+                "mean_return": float(summary["mean"]),
+                "std_return": float(summary["std"]),
+                "median_return": float(summary["median"]),
+                "delta_vs_h10": float(summary["mean"]) - selected_mean,
+                "selected": horizon == selected_horizon,
+            }
+        )
+    return pd.DataFrame(rows).sort_values("horizon").reset_index(drop=True)
+
+
+def horizon_sensitivity_data(wm: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for scale in SCALES:
+        subset = wm[wm["scale"] == scale]
+        short_medium = subset.loc[
+            subset["mean_NRMSE_H5_H10_H20"].idxmin(), "architecture"
+        ]
+        long_horizon = subset.loc[subset["NRMSE_H50"].idxmin(), "architecture"]
+        rows.append(
+            {
+                "scale": scale,
+                "best_h5_h10_h20_architecture": short_medium,
+                "best_h50_architecture": long_horizon,
+                "consistent": short_medium == long_horizon,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def training_sufficiency_data() -> pd.DataFrame:
+    specifications = (
+        (
+            "M100",
+            "GRU",
+            ROOT / "outputs/metrics/world_model_ib_m100_gru_training.csv",
+            35,
+        ),
+        (
+            "M1000",
+            "Transformer-2L",
+            ROOT
+            / "outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv",
+            20,
+        ),
+        (
+            "M10000",
+            "Transformer-2L",
+            ROOT
+            / "outputs/metrics/world_model_ib_m10000_transformer2_fair_training.csv",
+            4,
+        ),
+    )
+    rows = []
+    for scale, architecture, path, selected_epoch in specifications:
+        history = pd.read_csv(path)
+        selected = history[history["epoch"] == selected_epoch].iloc[0]
+        last = history.iloc[-1]
+        rows.append(
+            {
+                "scale": scale,
+                "architecture": architecture,
+                "total_epochs": int(last["epoch"]),
+                "selected_epoch": selected_epoch,
+                "selected_train_mse": float(selected["train_mse"]),
+                "selected_val_mse": float(selected["val_mse"]),
+                "last_train_mse": float(last["train_mse"]),
+                "last_val_mse": float(last["val_mse"]),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def figure_9_training_sufficiency() -> None:
+    history = pd.read_csv(
+        ROOT
+        / "outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv"
+    )
+    selected_epoch = 20
+    selected = history[history["epoch"] == selected_epoch].iloc[0]
+    fig, ax = plt.subplots(figsize=(6.6, 3.5))
+    ax.plot(
+        history["epoch"],
+        history["train_mse"],
+        color="#3B6FB6",
+        linewidth=1.6,
+        label="训练 MSE",
+    )
+    ax.plot(
+        history["epoch"],
+        history["val_mse"],
+        color="#E69F00",
+        linewidth=1.6,
+        label="验证 MSE",
+    )
+    ax.axvline(
+        selected_epoch,
+        color="#4C5964",
+        linestyle="--",
+        linewidth=1.0,
+        label="架构内选定轮次",
+    )
+    ax.scatter(
+        [selected_epoch, selected_epoch],
+        [selected["train_mse"], selected["val_mse"]],
+        color=["#3B6FB6", "#E69F00"],
+        edgecolor="white",
+        linewidth=0.6,
+        s=30,
+        zorder=4,
+    )
+    ax.set_xlabel("训练轮次")
+    ax.set_ylabel("均方误差（MSE）")
+    ax.set_title(
+        "M1000 Transformer-2L：正式50轮训练历史",
+        fontweight="bold",
+        loc="left",
+    )
+    ax.grid(axis="y", alpha=0.22)
+    ax.legend(ncol=3, loc="upper right")
+    save_figure(fig, "fig9_training_sufficiency")
+
+
 def latex_num(value: float, decimals: int = 3) -> str:
     return f"{value:.{decimals}f}"
 
@@ -591,15 +731,15 @@ def generate_tables(wm: pd.DataFrame) -> None:
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{longtable}{llrrrrrrr}
-\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。}
+\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。架构内选定轮次表示该模型架构所有候选 checkpoint 中最终采用的参数位置。}
 \label{tab:all_world_models}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endfirsthead
 \multicolumn{9}{c}{\tablename\ \thetable\ （续）}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endhead
 """ + "\n".join(all_world_model_rows) + r"""
@@ -665,6 +805,85 @@ def generate_tables(wm: pd.DataFrame) -> None:
 \end{table}
 """
 
+    horizon = horizon_ablation_data()
+    horizon_rows = []
+    for _, row in horizon.iterrows():
+        relative = (
+            "最终采用"
+            if bool(row["selected"])
+            else f"低于 H=10 {abs(row['delta_vs_h10']):,.0f}"
+        )
+        horizon_rows.append(
+            f"H={int(row['horizon'])} & "
+            f"{latex_return(row['mean_return'], row['std_return'])} & "
+            f"{row['median_return']:,.0f} & {relative} \\\\"
+        )
+    horizon_table = r"""
+\begin{table}[H]
+\centering
+\caption{CEM 规划长度消融。固定 M1000 GRU 世界模型及其余规划参数，每个规划长度在5个独立仿真初始条件下运行1000步；累计奖励越高越好。}
+\label{tab:horizon_ablation}
+\small
+\begin{tabular}{lrrl}
+\toprule
+规划长度 & 1000步累计奖励（均值 $\pm$ 标准差） & 中位数 & 相对表现 \\
+\midrule
+""" + "\n".join(horizon_rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+
+    sensitivity = horizon_sensitivity_data(wm)
+    sensitivity_rows = []
+    for _, row in sensitivity.iterrows():
+        sensitivity_rows.append(
+            f"{row['scale']} & {row['best_h5_h10_h20_architecture']} & "
+            f"{row['best_h50_architecture']} & "
+            f"{'是' if bool(row['consistent']) else '否'} \\\\"
+        )
+    sensitivity_table = r"""
+\begin{table}[H]
+\centering
+\caption{预测时间尺度敏感性。每列均在同一数据规模的五种架构中直接比较 NRMSE，数值越低越优。}
+\label{tab:horizon_sensitivity}
+\small
+\begin{tabular}{lccc}
+\toprule
+数据规模 & H5/H10/H20综合最优架构 & H50最优架构 & 是否一致 \\
+\midrule
+""" + "\n".join(sensitivity_rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+"""
+
+    training = training_sufficiency_data()
+    training_rows = []
+    for _, row in training.iterrows():
+        training_rows.append(
+            f"{row['scale']} & {row['architecture']} & {int(row['total_epochs'])} & "
+            f"{int(row['selected_epoch'])} & {row['selected_train_mse']:.4f} & "
+            f"{row['selected_val_mse']:.4f} & {row['last_train_mse']:.4f} & "
+            f"{row['last_val_mse']:.4f} \\\\"
+        )
+    training_table = r"""
+\begin{table}[H]
+\centering
+\caption{三个最终世界模型的训练充分性与 checkpoint 位置。选定轮次由统一验证的单步与多步预测协议确定，训练/验证 MSE 用于观察优化过程。}
+\label{tab:training_sufficiency}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
+\toprule
+数据规模 & 模型 & 总轮次 & 架构内选定轮次 & 选定训练MSE & 选定验证MSE & 最后训练MSE & 最后验证MSE \\
+\midrule
+""" + "\n".join(training_rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table}
+"""
+
     (GENERATED / "tables.tex").write_text(
         "\n".join(
             [
@@ -676,6 +895,9 @@ def generate_tables(wm: pd.DataFrame) -> None:
                 all_world_models,
                 per_variable,
                 data_scales,
+                horizon_table,
+                sensitivity_table,
+                training_table,
             ]
         ),
         encoding="utf-8",
@@ -689,6 +911,9 @@ def generate_tables(wm: pd.DataFrame) -> None:
         ("table_all_world_models.tex", all_world_models),
         ("table_per_variable.tex", per_variable),
         ("table_data_scales.tex", data_scales),
+        ("table_horizon_ablation.tex", horizon_table),
+        ("table_horizon_sensitivity.tex", sensitivity_table),
+        ("table_training_sufficiency.tex", training_table),
     ):
         (GENERATED / name).write_text(content, encoding="utf-8")
 
@@ -780,6 +1005,16 @@ Observation: 不加KL的平均累计奖励约为-883,709，加KL后为-284,715�
 Interpretation: 在当前消融设置中，行为KL约束显著降低了模型利用风险。
 
 Limitation: 消融覆盖一个世界模型和一次策略训练，最合适的KL系数及跨场景稳定性仍需进一步评价。
+
+## 图9：正式训练历史与中间checkpoint
+
+Question: 正式训练是否完成，以及为什么不机械使用最后一轮参数？
+
+Observation: M1000 Transformer-2L 的训练 MSE 在50轮内持续下降，而验证 MSE 在中后期趋于饱和并出现回升；架构内最终采用第20轮 checkpoint。
+
+Interpretation: 继续降低训练误差不等价于改善验证预测，保存并比较中间 checkpoint 可以减少训练后期过拟合对递归预测的影响。
+
+Limitation: 架构内选定轮次依据统一验证的单步与多步 NRMSE，而不是仅依据图中的验证 MSE 最小值。
 """
     (GENERATED / "figure_explanations.md").write_text(notes, encoding="utf-8")
 
@@ -858,6 +1093,19 @@ def export_source_data(wm: pd.DataFrame, trace: pd.DataFrame) -> None:
         history.insert(0, "condition", condition)
         histories.append(history)
     pd.concat(histories, ignore_index=True).to_csv(SOURCE_DATA / "fig8_kl_ablation_history.csv", index=False)
+    horizon_ablation_data().to_csv(
+        SOURCE_DATA / "table_horizon_ablation.csv", index=False
+    )
+    horizon_sensitivity_data(wm).to_csv(
+        SOURCE_DATA / "table_horizon_sensitivity.csv", index=False
+    )
+    training_sufficiency_data().to_csv(
+        SOURCE_DATA / "table_training_sufficiency.csv", index=False
+    )
+    pd.read_csv(
+        ROOT
+        / "outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv"
+    ).to_csv(SOURCE_DATA / "fig9_training_history.csv", index=False)
 
     final_summary = pd.read_csv(ROOT / "outputs/metrics/final_selected_systems_fresh_seeds_summary.csv")
     snapshot = {
@@ -885,11 +1133,12 @@ def main() -> None:
     figure_6_cross()
     figure_7_final()
     figure_8_kl()
+    figure_9_training_sufficiency()
     generate_tables(wm)
     figure_notes(wm, trace)
     export_source_data(wm, trace)
     normalize_generated_text()
-    print(f"generated figures={len(list(FIGURES.glob('*.pdf')))} tables=8")
+    print(f"generated figures={len(list(FIGURES.glob('*.pdf')))} tables=11")
 
 
 if __name__ == "__main__":

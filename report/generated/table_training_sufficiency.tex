@@ -1,0 +1,17 @@
+
+\begin{table}[H]
+\centering
+\caption{三个最终世界模型的训练充分性与 checkpoint 位置。选定轮次由统一验证的单步与多步预测协议确定，训练/验证 MSE 用于观察优化过程。}
+\label{tab:training_sufficiency}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
+\toprule
+数据规模 & 模型 & 总轮次 & 架构内选定轮次 & 选定训练MSE & 选定验证MSE & 最后训练MSE & 最后验证MSE \\
+\midrule
+M100 & GRU & 50 & 35 & 0.0343 & 0.0360 & 0.0333 & 0.0359 \\
+M1000 & Transformer-2L & 50 & 20 & 0.0288 & 0.0332 & 0.0252 & 0.0346 \\
+M10000 & Transformer-2L & 10 & 4 & 0.0185 & 0.0413 & 0.0145 & 0.0432 \\
+\bottomrule
+\end{tabular}}
+\end{table}

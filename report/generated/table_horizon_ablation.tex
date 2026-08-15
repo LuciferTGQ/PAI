@@ -1,0 +1,16 @@
+
+\begin{table}[H]
+\centering
+\caption{CEM 规划长度消融。固定 M1000 GRU 世界模型及其余规划参数，每个规划长度在5个独立仿真初始条件下运行1000步；累计奖励越高越好。}
+\label{tab:horizon_ablation}
+\small
+\begin{tabular}{lrrl}
+\toprule
+规划长度 & 1000步累计奖励（均值 $\pm$ 标准差） & 中位数 & 相对表现 \\
+\midrule
+H=5 & -280,284 $\pm$ 1,052 & -280,283 & 低于 H=10 10,910 \\
+H=10 & -269,374 $\pm$ 487 & -269,072 & 最终采用 \\
+H=20 & -272,618 $\pm$ 490 & -272,625 & 低于 H=10 3,244 \\
+\bottomrule
+\end{tabular}
+\end{table}

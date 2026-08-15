@@ -3,15 +3,15 @@
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{longtable}{llrrrrrrr}
-\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。}
+\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。架构内选定轮次表示该模型架构所有候选 checkpoint 中最终采用的参数位置。}
 \label{tab:all_world_models}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endfirsthead
 \multicolumn{9}{c}{\tablename\ \thetable\ （续）}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endhead
 M100 & MLP & 35 & 0.190 & 0.282 & 0.380 & 0.464 & 0.825 & 0.376 \\

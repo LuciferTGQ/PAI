@@ -38,7 +38,7 @@ def report_text() -> str:
 def main() -> None:
     failures: list[str] = []
 
-    for index in range(1, 9):
+    for index in range(1, 10):
         stem = next(FIGURES.glob(f"fig{index}_*.pdf"), None)
         if stem is None:
             failures.append(f"missing PDF for Figure {index}")
@@ -54,6 +54,10 @@ def main() -> None:
         "fig6_world_model_strategy_episodes.csv": 50,
         "fig7_final_evaluation.csv": 1040,
         "fig8_kl_ablation_returns.csv": 10,
+        "fig9_training_history.csv": 50,
+        "table_horizon_ablation.csv": 3,
+        "table_horizon_sensitivity.csv": 3,
+        "table_training_sufficiency.csv": 3,
         "dataset_scale_audit.csv": 3,
     }
     observed_rows = {name: row_count(name) for name in expected_rows}
@@ -119,7 +123,12 @@ def main() -> None:
         "称为统一验证",
         "归一化均方根误差（Normalized Root Mean Squared Error, NRMSE）",
         "H5 表示连续预测5个时间步后的误差",
+        "并不是前1至 $k$ 步预测误差的算术累加",
         "单步 NRMSE 遍历全部验证转移",
+        "规划长度消融使用 CEM 作为代表性规划器",
+        "H=10也是唯一合格候选",
+        "arXiv:2102.00714v2",
+        "架构内选定轮次",
         "100、1000和10000条完整工业轨迹",
         "补充实验结果",
         "工业应用与部署思考",
@@ -165,7 +174,51 @@ def main() -> None:
     if observed_scales != expected_scales:
         failures.append(f"dataset scale audit differs: {observed_scales}")
 
-    for filename in ("table_all_world_models.tex", "table_data_scales.tex"):
+    with (SOURCE_DATA / "table_horizon_ablation.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        horizon_rows = list(csv.DictReader(handle))
+    observed_horizons = {
+        int(row["horizon"]): (
+            int(row["episodes"]),
+            round(float(row["mean_return"]), 6),
+            round(float(row["std_return"]), 6),
+            round(float(row["median_return"]), 6),
+            row["selected"].lower() == "true",
+        )
+        for row in horizon_rows
+    }
+    expected_horizons = {
+        5: (5, -280283.901494, 1052.485097, -280282.875719, False),
+        10: (5, -269373.945350, 486.880849, -269071.808946, True),
+        20: (5, -272618.281878, 489.727079, -272624.757813, False),
+    }
+    if observed_horizons != expected_horizons:
+        failures.append(f"Horizon ablation differs: {observed_horizons}")
+
+    with (SOURCE_DATA / "table_training_sufficiency.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        training_rows = list(csv.DictReader(handle))
+    observed_training = {
+        row["scale"]: (int(row["total_epochs"]), int(row["selected_epoch"]))
+        for row in training_rows
+    }
+    expected_training = {
+        "M100": (50, 35),
+        "M1000": (50, 20),
+        "M10000": (10, 4),
+    }
+    if observed_training != expected_training:
+        failures.append(f"training sufficiency differs: {observed_training}")
+
+    for filename in (
+        "table_all_world_models.tex",
+        "table_data_scales.tex",
+        "table_horizon_ablation.tex",
+        "table_horizon_sensitivity.tex",
+        "table_training_sufficiency.tex",
+    ):
         if not (GENERATED / filename).exists():
             failures.append(f"missing appendix table: {filename}")
 

@@ -94,15 +94,15 @@ M10000: Transformer-2L + MPPI & NeoRL 仿真环境 & -223,876 $\pm$ 1,033 & +64,
 \scriptsize
 \setlength{\tabcolsep}{3.2pt}
 \begin{longtable}{llrrrrrrr}
-\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。}
+\caption{五种架构在三个数据规模上的完整预测结果。所有数值均来自统一验证，平均值为 H5、H10 和 H20 的算术平均。架构内选定轮次表示该模型架构所有候选 checkpoint 中最终采用的参数位置。}
 \label{tab:all_world_models}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endfirsthead
 \multicolumn{9}{c}{\tablename\ \thetable\ （续）}\\
 \toprule
-数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
+数据规模 & 模型架构 & 架构内选定轮次 & 单步 & H5 & H10 & H20 & H50 & H5--H20平均 \\
 \midrule
 \endhead
 M100 & MLP & 35 & 0.190 & 0.282 & 0.380 & 0.464 & 0.825 & 0.376 \\
@@ -159,4 +159,56 @@ M1000 & 1,000 & 1,000 & 1,000,000 & 50 \\
 M10000 & 10,000 & 1,000 & 10,000,000 & 10 \\
 \bottomrule
 \end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{CEM 规划长度消融。固定 M1000 GRU 世界模型及其余规划参数，每个规划长度在5个独立仿真初始条件下运行1000步；累计奖励越高越好。}
+\label{tab:horizon_ablation}
+\small
+\begin{tabular}{lrrl}
+\toprule
+规划长度 & 1000步累计奖励（均值 $\pm$ 标准差） & 中位数 & 相对表现 \\
+\midrule
+H=5 & -280,284 $\pm$ 1,052 & -280,283 & 低于 H=10 10,910 \\
+H=10 & -269,374 $\pm$ 487 & -269,072 & 最终采用 \\
+H=20 & -272,618 $\pm$ 490 & -272,625 & 低于 H=10 3,244 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{预测时间尺度敏感性。每列均在同一数据规模的五种架构中直接比较 NRMSE，数值越低越优。}
+\label{tab:horizon_sensitivity}
+\small
+\begin{tabular}{lccc}
+\toprule
+数据规模 & H5/H10/H20综合最优架构 & H50最优架构 & 是否一致 \\
+\midrule
+M100 & GRU & LSTM & 否 \\
+M1000 & Transformer-2L & Transformer-4L & 否 \\
+M10000 & Transformer-2L & Transformer-2L & 是 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{三个最终世界模型的训练充分性与 checkpoint 位置。选定轮次由统一验证的单步与多步预测协议确定，训练/验证 MSE 用于观察优化过程。}
+\label{tab:training_sufficiency}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
+\toprule
+数据规模 & 模型 & 总轮次 & 架构内选定轮次 & 选定训练MSE & 选定验证MSE & 最后训练MSE & 最后验证MSE \\
+\midrule
+M100 & GRU & 50 & 35 & 0.0343 & 0.0360 & 0.0333 & 0.0359 \\
+M1000 & Transformer-2L & 50 & 20 & 0.0288 & 0.0332 & 0.0252 & 0.0346 \\
+M10000 & Transformer-2L & 10 & 4 & 0.0185 & 0.0413 & 0.0145 & 0.0432 \\
+\bottomrule
+\end{tabular}}
 \end{table}
