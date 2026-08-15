@@ -1,0 +1,2 @@
+seed,dynamics,goal,horizon,num_samples,refinement_steps,baseline_zero_action_cost,planned_cost,cost_ratio,first_action,effective_sample_size,importance_weight_sum,passed
+19,x_next = x + u,3.0,8,2048,3,72.0,5.064530031522736,0.07034069488226022,0.996017336845398,6.253807544708252,0.9999998807907104,True

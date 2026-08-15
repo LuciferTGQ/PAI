@@ -4,6 +4,14 @@ from typing import Any, Dict
 
 import numpy as np
 
+try:
+    import colorednoise
+except ImportError as error:  # pragma: no cover - exercised by deployment environments
+    raise ImportError(
+        "Official iCEM noise requires colorednoise==2.2.0; "
+        "install requirements-planners.txt"
+    ) from error
+
 from src.strategy.cem_mpc import CEMMPCPolicy
 
 
@@ -14,17 +22,15 @@ def powerlaw_noise(
     action_dim: int,
     beta: float,
 ) -> np.ndarray:
-    """FFT power-law noise with unit variance along the temporal dimension."""
-    white = rng.standard_normal((samples, action_dim, horizon))
+    """Official iCEM colored-noise dependency, correlated along the horizon."""
     if beta <= 0:
-        return white.transpose(0, 2, 1).astype(np.float32)
-    frequencies = np.fft.rfftfreq(horizon)
-    scale = np.zeros_like(frequencies)
-    scale[1:] = np.power(frequencies[1:], -beta / 2.0)
-    spectrum = np.fft.rfft(white, axis=-1) * scale[None, None, :]
-    colored = np.fft.irfft(spectrum, n=horizon, axis=-1)
-    colored -= colored.mean(axis=-1, keepdims=True)
-    colored /= np.maximum(colored.std(axis=-1, keepdims=True), 1e-6)
+        colored = rng.standard_normal((samples, action_dim, horizon))
+    else:
+        colored = colorednoise.powerlaw_psd_gaussian(
+            beta,
+            size=(samples, action_dim, horizon),
+            random_state=rng,
+        )
     return colored.transpose(0, 2, 1).astype(np.float32)
 
 
@@ -38,12 +44,14 @@ class ICEMMPCPolicy(CEMMPCPolicy):
         self.noise_beta = float(config["noise_beta"])
         self._previous_mean = None
         self._previous_elites = None
+        self.last_diagnostics: Dict[str, Any] = {}
         super().__init__(world_model, behavior_policy, config, seed)
 
     def reset(self, seed: int) -> None:
         super().reset(seed)
         self._previous_mean = None
         self._previous_elites = None
+        self.last_diagnostics = {}
 
     def _sample(self, mean: np.ndarray, std: np.ndarray, population: int) -> np.ndarray:
         noise = powerlaw_noise(
@@ -56,49 +64,60 @@ class ICEMMPCPolicy(CEMMPCPolicy):
         ).astype(np.float32)
 
     def act(self, observation: np.ndarray) -> np.ndarray:
-        baseline_action = np.clip(
-            self.behavior_policy.act(observation), self.action_low, self.action_high
-        )
         if self._previous_mean is None:
-            mean = np.repeat(baseline_action[None, :], self.horizon, axis=0)
+            midpoint = (self.action_high + self.action_low) / 2.0
+            mean = np.repeat(midpoint[None, :], self.horizon, axis=0)
         else:
-            mean = np.concatenate(
-                (self._previous_mean[1:], self._previous_mean[-1:]), axis=0
-            )
-        std = np.full_like(mean, self.initial_std)
+            mean = self._previous_mean.copy()
+        initial_std = (
+            (self.action_high - self.action_low) / 2.0 * self.initial_std
+        )
+        std = np.broadcast_to(initial_std, mean.shape).copy()
         previous_iteration_elites = None
         previous_iteration_scores = None
         final_elites = None
         final_scores = None
+        population = self.population
+        population_schedule = []
+        model_evaluations = 0
+        best_score_by_iteration = []
 
         for iteration in range(self.iterations):
-            population = max(
-                2 * self.elites,
-                int(self.population / (self.population_decay**iteration)),
-            )
+            if iteration > 0:
+                population = max(
+                    2 * self.elites,
+                    int(population / self.population_decay),
+                )
+            population_schedule.append(population)
             sequences = self._sample(mean, std, population)
             if iteration == self.iterations - 1:
                 sequences[0] = mean
             scores = self._score_sequences(observation, sequences)
+            model_evaluations += population * self.horizon
 
             if iteration == 0 and self._previous_elites is not None:
-                reuse_count = max(1, int(len(self._previous_elites) * self.reuse_fraction))
-                shifted = self._previous_elites[:reuse_count, 1:].copy()
-                tail = self._sample(mean, std, reuse_count)[:, -1:]
-                shifted = np.concatenate((shifted, tail), axis=1)
-                shifted_scores = self._score_sequences(observation, shifted)
-                sequences = np.concatenate((sequences, shifted), axis=0)
-                scores = np.concatenate((scores, shifted_scores), axis=0)
+                reuse_count = int(
+                    len(self._previous_elites) * self.reuse_fraction
+                )
+                if reuse_count:
+                    shifted = self._previous_elites[:reuse_count, 1:].copy()
+                    tail = self._sample(mean, std, reuse_count)[:, -1:]
+                    shifted = np.concatenate((shifted, tail), axis=1)
+                    shifted_scores = self._score_sequences(observation, shifted)
+                    model_evaluations += reuse_count * self.horizon
+                    sequences = np.concatenate((sequences, shifted), axis=0)
+                    scores = np.concatenate((scores, shifted_scores), axis=0)
             elif iteration > 0 and previous_iteration_elites is not None:
-                reuse_count = max(
-                    1, int(len(previous_iteration_elites) * self.reuse_fraction)
+                reuse_count = int(
+                    len(previous_iteration_elites) * self.reuse_fraction
                 )
-                sequences = np.concatenate(
-                    (sequences, previous_iteration_elites[:reuse_count]), axis=0
-                )
-                scores = np.concatenate(
-                    (scores, previous_iteration_scores[:reuse_count]), axis=0
-                )
+                if reuse_count:
+                    sequences = np.concatenate(
+                        (sequences, previous_iteration_elites[:reuse_count]), axis=0
+                    )
+                    scores = np.concatenate(
+                        (scores, previous_iteration_scores[:reuse_count]), axis=0
+                    )
 
             elite_indices = np.argpartition(scores, -self.elites)[-self.elites :]
             elite_indices = elite_indices[np.argsort(scores[elite_indices])[::-1]]
@@ -113,11 +132,31 @@ class ICEMMPCPolicy(CEMMPCPolicy):
             )
             previous_iteration_elites = final_elites
             previous_iteration_scores = final_scores
+            best_score_by_iteration.append(float(final_scores[0]))
 
         if final_elites is None or final_scores is None:
             raise RuntimeError("iCEM produced no candidates")
-        self._previous_mean = mean.astype(np.float32)
+        self._previous_mean = np.concatenate(
+            (mean[1:], mean[-1:]), axis=0
+        ).astype(np.float32)
         self._previous_elites = final_elites.astype(np.float32)
+        best_index = int(np.argmax(final_scores))
+        best_sequence = final_elites[best_index]
+        self.last_diagnostics = {
+            "population_schedule": population_schedule,
+            "model_evaluations": model_evaluations,
+            "best_score": float(final_scores[best_index]),
+            "best_sequence": best_sequence.tolist(),
+            "best_score_by_iteration": best_score_by_iteration,
+            "elite_score_mean": float(np.mean(final_scores)),
+            "elite_score_std": float(np.std(final_scores)),
+            "action_clipped_fraction": float(
+                np.mean(
+                    (best_sequence <= self.action_low)
+                    | (best_sequence >= self.action_high)
+                )
+            ),
+        }
         return np.clip(
-            final_elites[int(np.argmax(final_scores)), 0], self.action_low, self.action_high
+            best_sequence[0], self.action_low, self.action_high
         ).astype(np.float32)

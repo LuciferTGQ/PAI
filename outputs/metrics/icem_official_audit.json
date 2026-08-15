@@ -1,0 +1,181 @@
+{
+  "source_of_truth": {
+    "repository": "https://github.com/martius-lab/iCEM",
+    "commit": "98c1c1fe2bfc94a87e4658b6c793f4e81bc30203",
+    "controller": "icem/controllers/icem.py",
+    "paper": "https://proceedings.mlr.press/v155/pinneri21a.html",
+    "colorednoise_dependency": "colorednoise==2.2.0"
+  },
+  "feature_audit": [
+    {
+      "feature": "colored_noise",
+      "previous": "custom FFT approximation",
+      "corrected": "direct colorednoise.powerlaw_psd_gaussian call",
+      "official_equivalent": true
+    },
+    {
+      "feature": "elite_reuse",
+      "previous": "implemented",
+      "corrected": "retained without reevaluation within an optimization call",
+      "official_equivalent": true
+    },
+    {
+      "feature": "previous_solution_shift",
+      "previous": "implemented with an extra shift at next call",
+      "corrected": "shift smoothed mean once after planning; shift final elites and sample tail next call",
+      "official_equivalent": true
+    },
+    {
+      "feature": "population_decay",
+      "previous": "base / factor**iteration",
+      "corrected": "iterative integer decay with lower bound 2x elites",
+      "official_equivalent": true
+    },
+    {
+      "feature": "clipping",
+      "previous": "implemented",
+      "corrected": "sample unconstrained then clip to bounds",
+      "official_equivalent": true
+    },
+    {
+      "feature": "best_sequence_preservation",
+      "previous": "implemented",
+      "corrected": "reuse ordered top elites and execute best evaluated final-pool sequence",
+      "official_equivalent": true
+    },
+    {
+      "feature": "final_mean_sample",
+      "previous": "implemented",
+      "corrected": "replace sample zero by distribution mean only in final iteration",
+      "official_equivalent": true
+    },
+    {
+      "feature": "population_sample_schedule",
+      "previous": "not logged",
+      "corrected": "logged per iteration with exact model-evaluation count",
+      "official_equivalent": true
+    },
+    {
+      "feature": "initial_mean",
+      "previous": "BC action",
+      "corrected": "action-bound midpoint",
+      "official_equivalent": true
+    },
+    {
+      "feature": "std_floor",
+      "previous": "0.05 in historical config",
+      "corrected": "0.0 in reference-validation config",
+      "official_equivalent": true
+    }
+  ],
+  "colored_noise_equivalence": {
+    "config": {
+      "seed": 17,
+      "samples": 7,
+      "horizon": 11,
+      "action_dim": 3,
+      "beta": 2.0
+    },
+    "array_equal": true,
+    "max_abs_difference": 0.0
+  },
+  "toy_objective": {
+    "seed": 23,
+    "target": [
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ],
+      [
+        0.6499999761581421
+      ]
+    ],
+    "config": {
+      "horizon": 8,
+      "population": 256,
+      "elites": 16,
+      "iterations": 4,
+      "initial_std": 1.0,
+      "min_std": 0.0,
+      "action_low": [
+        -1.0
+      ],
+      "action_high": [
+        1.0
+      ],
+      "momentum": 0.1,
+      "population_decay": 1.25,
+      "reuse_fraction": 0.3,
+      "noise_beta": 2.0
+    },
+    "baseline_mse": 0.42249995470046997,
+    "optimized_mse": 0.0012617832254360195,
+    "mse_ratio": 0.002986469492832388,
+    "first_action": [
+      0.6392008662223816
+    ],
+    "passed": true,
+    "diagnostics": {
+      "population_schedule": [
+        256,
+        204,
+        163,
+        130
+      ],
+      "model_evaluations": 6024,
+      "best_score": -0.0012617831816896796,
+      "best_sequence": [
+        [
+          0.6392008662223816
+        ],
+        [
+          0.6612499356269836
+        ],
+        [
+          0.6498324275016785
+        ],
+        [
+          0.6706113815307617
+        ],
+        [
+          0.7151470184326172
+        ],
+        [
+          0.6611452698707581
+        ],
+        [
+          0.6518776416778564
+        ],
+        [
+          0.7210938930511475
+        ]
+      ],
+      "best_score_by_iteration": [
+        -0.07349354773759842,
+        -0.015728799626231194,
+        -0.004627997521311045,
+        -0.0012617831816896796
+      ],
+      "elite_score_mean": -0.005462525878101587,
+      "elite_score_std": 0.002023927867412567,
+      "action_clipped_fraction": 0.0
+    }
+  }
+}
