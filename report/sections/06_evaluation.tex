@@ -1,6 +1,8 @@
+NeoRL Industrial Benchmark 同时提供离线历史轨迹和可交互的工业仿真环境。本文的世界模型由历史轨迹训练；策略确定后，最终累计奖励由独立的 NeoRL IB 仿真环境产生。世界模型用于预测和策略优化，NeoRL simulator 则用于外部闭环评价。
+
 \subsection{不同数据规模下的策略比较}
 
-每个数据规模固定由统一预测评价选出的同一个世界模型，再比较 CEM、iCEM、MPPI 与 MB-PPO。所有策略在5组相同随机初始条件下独立重复仿真，采用相同的1000步回合与奖励定义。因此，\cref{fig:strategy_matrix}和\cref{tab:strategy_matrix}中的差异主要来自策略与固定世界模型之间的交互。
+每个数据规模固定由统一预测评价选出的同一个世界模型，再比较 CEM、iCEM、MPPI 与 MB-PPO。所有策略在5组相同随机初始条件下独立重复仿真，采用相同的1000步回合与奖励定义。由此可以在相同世界模型和仿真条件下比较不同策略的控制效果。
 
 \begin{figure}[H]
   \centering

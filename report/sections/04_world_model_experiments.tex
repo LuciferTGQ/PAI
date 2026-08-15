@@ -22,11 +22,11 @@ M100 中，GRU 在单步误差合格的候选模型中取得最低短中期综�
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\textwidth]{fig3_multistep_error.pdf}
-  \caption{\textbf{M1000 上的多步递归预测误差累积。} 五种架构的短期误差较接近，但在20至50步明显分离；Transformer-2L 的 H5--H20 综合误差最低，而 Transformer-4L 的 H50 误差更低。}
+  \caption{\textbf{M1000 上的多步递归预测误差。} 五种架构的短期误差较接近，但在20至50步明显分离；Transformer-2L 的 H5--H20 综合误差最低，而 Transformer-4L 的 H50 误差更低。}
   \label{fig:multistep}
 \end{figure}
 
-\Cref{tab:horizon_sensitivity}进一步比较每个数据规模下 H5/H10/H20 综合指标与 H50 的最优架构。M100 和 M1000 的两种排序并不一致，M10000 则同时由 Transformer-2L 取得最低误差。这说明世界模型的相对表现与关注的预测时间尺度有关；本文采用 H5/H10/H20 作为主要递归选择指标，是因为它们覆盖后续10步规划长度及其邻近范围，而不是因为 H50 缺少评价价值。
+\Cref{tab:horizon_sensitivity}进一步比较每个数据规模下 H5/H10/H20 综合指标与 H50 的最优架构。M100 和 M1000 的两种排序并不一致，M10000 则同时由 Transformer-2L 取得最低误差。这说明世界模型的相对表现与关注的预测时间尺度有关。结合后续10步规划长度，本文将 H5/H10/H20 作为主要递归选择指标，以覆盖实际规划时间尺度及其邻近范围；H50则补充反映更长时域下的递归稳定性。
 
 \input{generated/table_horizon_sensitivity}
 

@@ -25,7 +25,7 @@ figures:
     exports: [pdf, svg, png]
 
   - id: fig3_multistep_error
-    title: 多步递归预测误差累积
+    title: 递归预测误差随预测步长的变化
     decision: figure
     archetype: quantitative grid
     question: 为什么单步准确率不足以评价递归使用的世界模型？
@@ -91,14 +91,16 @@ figures:
     exports: [pdf, svg, png]
 
   - id: fig9_training_sufficiency
-    title: 正式训练历史与中间 checkpoint
+    title: 代表性正式训练过程与候选 checkpoint 评价
     decision: figure
     archetype: quantitative grid
     question: 正式训练是否完成，以及为什么不机械使用最后一轮参数？
-    sources: [outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv]
+    sources:
+      - outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv
+      - outputs/metrics/world_model_5x3_common_validation_checkpoints.csv
     controls: 使用正式5×3矩阵中的 M1000 Transformer-2L 50轮训练历史；不混入旧100轮实验。
-    conclusion: 训练 MSE 持续下降，而验证 MSE 在中后期趋于饱和并回升，中间 checkpoint 具有必要性。
-    review_risk: 最终选定轮次来自统一验证的单步与多步 NRMSE，而不是仅取验证 MSE 最低点。
+    conclusion: 训练 MSE 持续下降时验证表现未继续同步改善，实际候选 checkpoint 的统一预测评价支持采用中间轮次。
+    review_risk: 右图只显示11个实际保存并评价的候选 checkpoint，连线仅用于辅助观察，不进行插值或平滑。
     exports: [pdf, svg, png]
 
 tables:

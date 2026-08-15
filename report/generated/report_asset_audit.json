@@ -9,6 +9,7 @@
     "fig7_final_evaluation.csv": 1040,
     "fig8_kl_ablation_returns.csv": 10,
     "fig9_training_history.csv": 50,
+    "fig9_checkpoint_metrics.csv": 11,
     "table_horizon_ablation.csv": 3,
     "table_horizon_sensitivity.csv": 3,
     "table_training_sufficiency.csv": 3,

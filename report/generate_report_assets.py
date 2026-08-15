@@ -215,7 +215,7 @@ def figure_3_multistep(wm: pd.DataFrame) -> None:
     ax.set_xticks(horizons, [str(h) for h in horizons])
     ax.set_xlabel("递归预测步数")
     ax.set_ylabel("NRMSE")
-    ax.set_title("M1000：多步递归预测误差累积", fontweight="bold", loc="left")
+    ax.set_title("M1000：递归预测误差随预测步长的变化", fontweight="bold", loc="left")
     ax.grid(axis="y", alpha=0.22)
     ax.legend(ncol=3, loc="upper left")
     save_figure(fig, "fig3_multistep_error")
@@ -513,31 +513,40 @@ def figure_9_training_sufficiency() -> None:
         ROOT
         / "outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv"
     )
+    checkpoints = pd.read_csv(
+        ROOT / "outputs/metrics/world_model_5x3_common_validation_checkpoints.csv"
+    )
+    checkpoints = checkpoints[
+        (checkpoints["data_scale"] == 1000)
+        & (checkpoints["architecture"] == "Transformer-2L")
+    ].sort_values("epoch")
     selected_epoch = 20
     selected = history[history["epoch"] == selected_epoch].iloc[0]
-    fig, ax = plt.subplots(figsize=(6.6, 3.5))
-    ax.plot(
+    selected_checkpoint = checkpoints[checkpoints["epoch"] == selected_epoch].iloc[0]
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.35), constrained_layout=True)
+
+    axes[0].plot(
         history["epoch"],
         history["train_mse"],
         color="#3B6FB6",
         linewidth=1.6,
         label="训练 MSE",
     )
-    ax.plot(
+    axes[0].plot(
         history["epoch"],
         history["val_mse"],
         color="#E69F00",
         linewidth=1.6,
         label="验证 MSE",
     )
-    ax.axvline(
+    axes[0].axvline(
         selected_epoch,
         color="#4C5964",
         linestyle="--",
         linewidth=1.0,
         label="架构内选定轮次",
     )
-    ax.scatter(
+    axes[0].scatter(
         [selected_epoch, selected_epoch],
         [selected["train_mse"], selected["val_mse"]],
         color=["#3B6FB6", "#E69F00"],
@@ -546,15 +555,57 @@ def figure_9_training_sufficiency() -> None:
         s=30,
         zorder=4,
     )
-    ax.set_xlabel("训练轮次")
-    ax.set_ylabel("均方误差（MSE）")
-    ax.set_title(
-        "M1000 Transformer-2L：正式50轮训练历史",
-        fontweight="bold",
-        loc="left",
+    axes[0].set_xlabel("训练轮次")
+    axes[0].set_ylabel("均方误差（MSE）")
+    axes[0].set_title("正式50轮训练历史", fontweight="bold", loc="left")
+    axes[0].grid(axis="y", alpha=0.22)
+    axes[0].legend(ncol=1, loc="upper right")
+    panel_label(axes[0], "a")
+
+    axes[1].plot(
+        checkpoints["epoch"],
+        checkpoints["one_step_NRMSE"],
+        color="#008E9B",
+        linewidth=1.4,
+        marker="o",
+        markersize=4.0,
+        label="单步 NRMSE",
     )
-    ax.grid(axis="y", alpha=0.22)
-    ax.legend(ncol=3, loc="upper right")
+    axes[1].plot(
+        checkpoints["epoch"],
+        checkpoints["mean_NRMSE_H5_H10_H20"],
+        color="#9C6ADE",
+        linewidth=1.4,
+        marker="s",
+        markersize=4.0,
+        label="mean(H5, H10, H20)",
+    )
+    axes[1].axvline(
+        selected_epoch,
+        color="#4C5964",
+        linestyle="--",
+        linewidth=1.0,
+        label="架构内选定轮次",
+    )
+    axes[1].scatter(
+        [selected_epoch, selected_epoch],
+        [
+            selected_checkpoint["one_step_NRMSE"],
+            selected_checkpoint["mean_NRMSE_H5_H10_H20"],
+        ],
+        color=["#008E9B", "#9C6ADE"],
+        edgecolor="white",
+        linewidth=0.6,
+        s=34,
+        zorder=4,
+    )
+    axes[1].set_xticks([5, 10, 20, 30, 40, 50])
+    axes[1].set_xlabel("候选 checkpoint 轮次")
+    axes[1].set_ylabel("NRMSE")
+    axes[1].set_title("统一验证指标", fontweight="bold", loc="left")
+    axes[1].grid(axis="y", alpha=0.22)
+    axes[1].legend(ncol=1, loc="upper right")
+    panel_label(axes[1], "b")
     save_figure(fig, "fig9_training_sufficiency")
 
 
@@ -608,7 +659,7 @@ def generate_tables(wm: pd.DataFrame) -> None:
     table2 = r"""
 \begin{table}[H]
 \centering
-\caption{统一验证选出的世界模型。H50 仅用于长期稳定性诊断。}
+\caption{统一验证选出的世界模型，同时列出 H50 以展示更长时域的递归预测表现。}
 \label{tab:selected_wm}
 \small
 \begin{tabular}{lllrrrrr}
@@ -946,7 +997,7 @@ Interpretation: 模型架构与数据规模存在交互，单步预测排序与�
 
 Limitation: 每格来自一次正式训练结果，不能替代多次独立训练的鲁棒性研究。
 
-## 图3：多步递归预测误差累积
+## 图3：递归预测误差随预测步长的变化
 
 Question: 单步NRMSE为何不足以描述需要递归使用的世界模型？
 
@@ -954,7 +1005,7 @@ Observation: M1000中五个模型的单步误差接近，但H20和H50明显分�
 
 Interpretation: 小的单步偏差会在递归更新中传播，短中期稳定性需要直接评价。
 
-Limitation: 图中固定 M1000，其他数据规模可能呈现不同的误差累积形态。
+Limitation: 图中固定 M1000，其他数据规模可能呈现不同的误差传播形态。
 
 ## 图4：代表性50步轨迹
 
@@ -1006,15 +1057,15 @@ Interpretation: 在当前消融设置中，行为KL约束显著降低了模型�
 
 Limitation: 消融覆盖一个世界模型和一次策略训练，最合适的KL系数及跨场景稳定性仍需进一步评价。
 
-## 图9：正式训练历史与中间checkpoint
+## 图9：代表性正式训练过程与候选checkpoint评价
 
 Question: 正式训练是否完成，以及为什么不机械使用最后一轮参数？
 
-Observation: M1000 Transformer-2L 的训练 MSE 在50轮内持续下降，而验证 MSE 在中后期趋于饱和并出现回升；架构内最终采用第20轮 checkpoint。
+Observation: M1000 Transformer-2L 的训练 MSE 在50轮内持续下降；验证 MSE 在前期进入较低区间后未继续同步改善，并在后期波动和部分回升。实际候选 checkpoint 的统一验证指标显示，第20轮取得最低的 H5/H10/H20 平均 NRMSE。
 
-Interpretation: 继续降低训练误差不等价于改善验证预测，保存并比较中间 checkpoint 可以减少训练后期过拟合对递归预测的影响。
+Interpretation: 继续降低训练误差没有带来稳定的验证收益，保存并比较中间 checkpoint 有助于依据实际单步和递归预测表现确定参数。
 
-Limitation: 架构内选定轮次依据统一验证的单步与多步 NRMSE，而不是仅依据图中的验证 MSE 最小值。
+Limitation: 右图仅连接11个实际保存并评价的候选 checkpoint，连线用于辅助观察，不代表插值后的连续评价结果。
 """
     (GENERATED / "figure_explanations.md").write_text(notes, encoding="utf-8")
 
@@ -1106,6 +1157,26 @@ def export_source_data(wm: pd.DataFrame, trace: pd.DataFrame) -> None:
         ROOT
         / "outputs/metrics/world_model_ib_m1000_transformer2_fair_training.csv"
     ).to_csv(SOURCE_DATA / "fig9_training_history.csv", index=False)
+    checkpoint_metrics = pd.read_csv(
+        ROOT / "outputs/metrics/world_model_5x3_common_validation_checkpoints.csv"
+    )
+    checkpoint_metrics = checkpoint_metrics[
+        (checkpoint_metrics["data_scale"] == 1000)
+        & (checkpoint_metrics["architecture"] == "Transformer-2L")
+    ].sort_values("epoch")
+    checkpoint_metrics[
+        [
+            "epoch",
+            "one_step_NRMSE",
+            "NRMSE_H5",
+            "NRMSE_H10",
+            "NRMSE_H20",
+            "mean_NRMSE_H5_H10_H20",
+            "NRMSE_H50",
+            "selected_within_architecture",
+            "selected_status",
+        ]
+    ].to_csv(SOURCE_DATA / "fig9_checkpoint_metrics.csv", index=False)
 
     final_summary = pd.read_csv(ROOT / "outputs/metrics/final_selected_systems_fresh_seeds_summary.csv")
     snapshot = {
