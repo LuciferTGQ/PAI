@@ -1,12 +1,12 @@
 
 \begin{table}[H]
 \centering
-\caption{Transformer depth ablation. 单元格为 one-step / mean(H5,H10,H20)；差值为4L减2L，负值更优。}
+\caption{Transformer 深度消融。单元格为单步 NRMSE / H5、H10、H20 平均 NRMSE；差值为4L减2L，负值表示4L更优。}
 \label{tab:depth}
 \small
 \begin{tabular}{lccc}
 \toprule
-Scale & Transformer-2L & Transformer-4L & Difference \\
+数据规模 & Transformer-2L & Transformer-4L & 差值 \\
 \midrule
 M100 & 0.179 / 0.470 & 0.182 / 0.425 & +0.003 / -0.044 \\
 M1000 & 0.183 / 0.318 & 0.183 / 0.338 & +0.000 / +0.020 \\

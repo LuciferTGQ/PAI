@@ -1,19 +1,19 @@
 
 \begin{table}[H]
 \centering
-\caption{M1000 Transformer-2L的per-variable NRMSE。变量的误差积累速度明显不同。}
+\caption{M1000 Transformer-2L 的变量级 NRMSE。不同物理变量的误差累积速度明显不同。}
 \label{tab:per_variable}
 \small
 \begin{tabular}{lrrr}
 \toprule
-Variable & One-step & H20 & H50 \\
+物理变量 & 单步 & H20 & H50 \\
 \midrule
-Setpoint & 0.000 & 0.000 & 0.000 \\
-Velocity & 0.029 & 0.310 & 0.704 \\
-Gain & 0.018 & 0.292 & 0.012 \\
-Shift & 0.036 & 0.670 & 1.498 \\
-Fatigue & 0.378 & 0.432 & 0.510 \\
-Consumption & 0.234 & 0.406 & 0.773 \\
+设定值 & 0.000 & 0.000 & 0.000 \\
+速度 & 0.029 & 0.310 & 0.704 \\
+增益 & 0.018 & 0.292 & 0.012 \\
+偏移 & 0.036 & 0.670 & 1.498 \\
+疲劳度 & 0.378 & 0.432 & 0.510 \\
+能耗 & 0.234 & 0.406 & 0.773 \\
 \bottomrule
 \end{tabular}
 \end{table}

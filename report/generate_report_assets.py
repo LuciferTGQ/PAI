@@ -4,6 +4,7 @@ import csv
 import json
 import math
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -53,7 +54,8 @@ def configure_style() -> None:
     mpl.rcParams.update(
         {
             "font.family": "sans-serif",
-            "font.sans-serif": ["Arial", "Microsoft YaHei", "DejaVu Sans"],
+            "font.sans-serif": ["Microsoft YaHei", "Arial", "DejaVu Sans"],
+            "mathtext.fontset": "dejavusans",
             "font.size": 8,
             "axes.titlesize": 9,
             "axes.labelsize": 8,
@@ -79,7 +81,17 @@ def save_figure(fig: mpl.figure.Figure, stem: str) -> None:
         ("svg", {}),
         ("png", {"dpi": 600}),
     ):
-        fig.savefig(FIGURES / f"{stem}.{suffix}", bbox_inches="tight", **kwargs)
+        target = FIGURES / f"{stem}.{suffix}"
+        temporary = FIGURES / f"{stem}.tmp.{suffix}"
+        for attempt in range(3):
+            try:
+                fig.savefig(temporary, bbox_inches="tight", **kwargs)
+                temporary.replace(target)
+                break
+            except OSError:
+                if attempt == 2:
+                    raise
+                time.sleep(0.15)
     plt.close(fig)
 
 
@@ -112,15 +124,16 @@ def read_world_models() -> pd.DataFrame:
 
 
 def figure_1_framework() -> None:
-    fig, ax = plt.subplots(figsize=(7.0, 3.35))
-    ax.set_xlim(0, 14)
-    ax.set_ylim(0, 7)
+    fig, ax = plt.subplots(figsize=(7.2, 3.45))
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 7.2)
     ax.axis("off")
     phases = [
-        (0.3, 4.7, 3.1, 1.25, "Historical trajectories", "30 x 6 history + 3D action", "#EAF1F8"),
-        (4.1, 4.7, 3.2, 1.25, "World Model", "predict next 6D frame", "#E4F3F0"),
-        (8.1, 4.7, 2.4, 1.25, "Frozen model", "recursive rollout", "#E4F3F0"),
-        (11.1, 4.7, 2.5, 1.25, "NeoRL simulator", "1000-step control", "#F8EFD9"),
+        (0.2, 5.0, 2.55, 1.15, "NeoRL 历史轨迹", "工业状态与动作记录", "#EAF1F8"),
+        (3.25, 5.0, 2.55, 1.15, "历史状态与动作", "30帧历史 + 3维动作", "#EAF1F8"),
+        (6.3, 5.0, 2.45, 1.15, "世界模型训练", "预测下一帧状态", "#E4F3F0"),
+        (9.25, 5.0, 3.0, 1.15, "预测能力评价", "单步 + 多步递归预测", "#E4F3F0"),
+        (12.75, 5.0, 2.75, 1.15, "冻结世界模型", "支持后续策略优化", "#E4F3F0"),
     ]
     for x, y, w, h, title, sub, color in phases:
         box = FancyBboxPatch(
@@ -128,40 +141,37 @@ def figure_1_framework() -> None:
             facecolor=color, edgecolor="#4C5964", linewidth=1.0,
         )
         ax.add_patch(box)
-        ax.text(x + w / 2, y + 0.77, title, ha="center", va="center", fontweight="bold", fontsize=9)
-        ax.text(x + w / 2, y + 0.32, sub, ha="center", va="center", color="#4C5964", fontsize=7)
-    for x1, x2 in ((3.4, 4.1), (7.3, 8.1), (10.5, 11.1)):
-        ax.add_patch(FancyArrowPatch((x1, 5.33), (x2, 5.33), arrowstyle="-|>", mutation_scale=12, color="#4C5964"))
-
-    gate = FancyBboxPatch(
-        (4.25, 2.55), 5.95, 1.15, boxstyle="round,pad=0.08,rounding_size=0.1",
-        facecolor="#F5F6F7", edgecolor="#2A9D8F", linewidth=1.5,
-    )
-    ax.add_patch(gate)
-    ax.text(7.225, 3.25, "Dynamics validation only", ha="center", va="center", fontweight="bold", color="#1D746B")
-    ax.text(7.225, 2.82, "one-step gate -> minimize mean(H5, H10, H20); H50 diagnostic", ha="center", va="center", fontsize=7)
-    ax.add_patch(FancyArrowPatch((5.7, 4.7), (5.7, 3.7), arrowstyle="-|>", mutation_scale=11, color="#2A9D8F"))
-    ax.add_patch(FancyArrowPatch((8.7, 3.7), (8.7, 4.7), arrowstyle="-|>", mutation_scale=11, color="#2A9D8F"))
+        ax.text(x + w / 2, y + 0.72, title, ha="center", va="center", fontweight="bold", fontsize=8.5)
+        ax.text(x + w / 2, y + 0.30, sub, ha="center", va="center", color="#4C5964", fontsize=6.8)
+    for x1, x2 in ((2.75, 3.25), (5.8, 6.3), (8.75, 9.25), (12.25, 12.75)):
+        ax.add_patch(FancyArrowPatch((x1, 5.58), (x2, 5.58), arrowstyle="-|>", mutation_scale=11, color="#4C5964"))
 
     plan = FancyBboxPatch(
-        (3.0, 0.45), 3.45, 1.05, boxstyle="round,pad=0.06,rounding_size=0.08",
+        (2.2, 2.55), 4.15, 1.05, boxstyle="round,pad=0.06,rounding_size=0.08",
         facecolor="#EAF1F8", edgecolor="#3B6FB6", linewidth=1.0,
     )
     rl = FancyBboxPatch(
-        (7.15, 0.45), 3.45, 1.05, boxstyle="round,pad=0.06,rounding_size=0.08",
+        (9.65, 2.55), 4.15, 1.05, boxstyle="round,pad=0.06,rounding_size=0.08",
         facecolor="#EEE8F5", edgecolor="#8C6BB1", linewidth=1.0,
     )
     ax.add_patch(plan)
     ax.add_patch(rl)
-    ax.text(4.725, 1.12, "Model-Based Planning", ha="center", fontweight="bold")
-    ax.text(4.725, 0.72, "CEM / iCEM / MPPI", ha="center", fontsize=7)
-    ax.text(8.875, 1.12, "Model-Based RL", ha="center", fontweight="bold")
-    ax.text(8.875, 0.72, "MB-PPO + behavior KL", ha="center", fontsize=7)
-    ax.add_patch(FancyArrowPatch((8.7, 4.7), (5.0, 1.5), arrowstyle="-|>", mutation_scale=10, color="#3B6FB6", connectionstyle="arc3,rad=0.14"))
-    ax.add_patch(FancyArrowPatch((8.9, 4.7), (8.9, 1.5), arrowstyle="-|>", mutation_scale=10, color="#8C6BB1"))
-    ax.add_patch(FancyArrowPatch((6.45, 0.98), (11.8, 4.7), arrowstyle="-|>", mutation_scale=10, color="#3B6FB6", connectionstyle="arc3,rad=-0.14"))
-    ax.add_patch(FancyArrowPatch((10.6, 0.98), (12.5, 4.7), arrowstyle="-|>", mutation_scale=10, color="#8C6BB1", connectionstyle="arc3,rad=-0.12"))
-    ax.text(11.9, 3.2, "reward is used here,\nnot for model selection", ha="center", va="center", fontsize=7, color="#A65F00")
+    ax.text(4.275, 3.18, "基于模型的规划", ha="center", fontweight="bold")
+    ax.text(4.275, 2.78, "CEM / iCEM / MPPI", ha="center", fontsize=7)
+    ax.text(11.725, 3.18, "基于模型的强化学习", ha="center", fontweight="bold")
+    ax.text(11.725, 2.78, "MB-PPO", ha="center", fontsize=7)
+    ax.add_patch(FancyArrowPatch((14.125, 5.0), (4.3, 3.6), arrowstyle="-|>", mutation_scale=10, color="#3B6FB6", connectionstyle="arc3,rad=0.10"))
+    ax.add_patch(FancyArrowPatch((14.125, 5.0), (11.7, 3.6), arrowstyle="-|>", mutation_scale=10, color="#8C6BB1", connectionstyle="arc3,rad=-0.08"))
+
+    simulator = FancyBboxPatch(
+        (5.75, 0.55), 4.5, 1.05, boxstyle="round,pad=0.06,rounding_size=0.08",
+        facecolor="#F8EFD9", edgecolor="#B58116", linewidth=1.0,
+    )
+    ax.add_patch(simulator)
+    ax.text(8.0, 1.18, "NeoRL 仿真环境", ha="center", fontweight="bold")
+    ax.text(8.0, 0.78, "1000步长期累计奖励", ha="center", fontsize=7)
+    ax.add_patch(FancyArrowPatch((4.3, 2.55), (6.6, 1.6), arrowstyle="-|>", mutation_scale=10, color="#3B6FB6"))
+    ax.add_patch(FancyArrowPatch((11.7, 2.55), (9.4, 1.6), arrowstyle="-|>", mutation_scale=10, color="#8C6BB1"))
     save_figure(fig, "fig1_framework")
 
 
@@ -171,8 +181,8 @@ def figure_2_heatmaps(wm: pd.DataFrame) -> None:
     selected = {("GRU", "M100"), ("Transformer-2L", "M1000"), ("Transformer-2L", "M10000")}
     fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.55), constrained_layout=True)
     for label, ax, data, title, fmt in (
-        ("a", axes[0], one, "One-step NRMSE", ".3f"),
-        ("b", axes[1], rollout, "Mean NRMSE at H5/H10/H20", ".3f"),
+        ("a", axes[0], one, "单步预测 NRMSE", ".3f"),
+        ("b", axes[1], rollout, "H5/H10/H20 平均 NRMSE", ".3f"),
     ):
         image = ax.imshow(data.values, cmap="Blues", aspect="auto")
         ax.set_xticks(range(len(SCALES)), SCALES)
@@ -188,29 +198,28 @@ def figure_2_heatmaps(wm: pd.DataFrame) -> None:
         cbar = fig.colorbar(image, ax=ax, fraction=0.045, pad=0.03)
         cbar.ax.tick_params(labelsize=6)
         panel_label(ax, label)
-    axes[0].set_ylabel("Architecture")
-    fig.text(0.5, -0.01, "Lower is better; orange borders mark validation-selected models", ha="center", fontsize=7, color="#4C5964")
+    axes[0].set_ylabel("模型架构")
+    fig.text(0.5, -0.01, "数值越低越好；边框表示各数据规模最终选定的模型", ha="center", fontsize=7, color="#4C5964")
     save_figure(fig, "fig2_world_model_heatmaps")
 
 
 def figure_3_multistep(wm: pd.DataFrame) -> None:
     subset = wm[wm["scale"] == "M1000"].set_index("architecture").loc[ARCHITECTURES]
     horizons = [1, 5, 10, 20, 50]
-    x = np.arange(len(horizons))
     fig, ax = plt.subplots(figsize=(6.6, 3.7))
     for architecture in ARCHITECTURES:
         values = [subset.loc[architecture, f"NRMSE_H{h}"] for h in horizons]
         ax.plot(
-            x, values, marker="o", markersize=4.8, linewidth=1.5,
+            horizons, values, marker="o", markersize=4.8, linewidth=1.5,
             color=ARCH_COLORS[architecture], label=architecture,
         )
-    ax.set_xticks(x, [f"H{h}" for h in horizons])
-    ax.set_xlabel("Evaluated recursive-rollout horizon")
+    ax.set_xticks(horizons, [str(h) for h in horizons])
+    ax.set_xlabel("递归预测步数")
     ax.set_ylabel("NRMSE")
-    ax.set_title("M1000: recursive error accumulation", fontweight="bold", loc="left")
+    ax.set_title("M1000：多步递归预测误差累积", fontweight="bold", loc="left")
     ax.grid(axis="y", alpha=0.22)
     ax.legend(ncol=3, loc="upper left")
-    ax.text(0.99, 0.02, "Markers are the five measured horizons; lines are visual guides only.", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.5, color="#4C5964")
+    ax.text(0.99, 0.02, "标记点为真实评价结果，连接线仅辅助观察", transform=ax.transAxes, ha="right", va="bottom", fontsize=6.5, color="#4C5964")
     save_figure(fig, "fig3_multistep_error")
 
 
@@ -265,20 +274,20 @@ def representative_rollout() -> pd.DataFrame:
 
 
 def figure_4_rollout(trace: pd.DataFrame) -> None:
-    variables = [("velocity", "Velocity"), ("fatigue", "Fatigue"), ("consumption", "Consumption")]
+    variables = [("velocity", "速度"), ("fatigue", "疲劳度"), ("consumption", "能耗")]
     fig, axes = plt.subplots(3, 1, figsize=(7.0, 5.6), sharex=True, constrained_layout=True)
     for label, ax, (key, display) in zip("abc", axes, variables):
         data = trace[trace["variable"] == key]
-        ax.plot(data["step"], data["ground_truth"], color="#252A2E", linewidth=1.5, label="Ground truth")
-        ax.plot(data["step"], data["prediction"], color="#2A9D8F", linewidth=1.5, linestyle="--", label="Prediction")
+        ax.plot(data["step"], data["ground_truth"], color="#252A2E", linewidth=1.5, label="真实状态")
+        ax.plot(data["step"], data["prediction"], color="#2A9D8F", linewidth=1.5, linestyle="--", label="模型预测")
         ax.set_ylabel(display)
         ax.grid(alpha=0.2)
         panel_label(ax, label)
     axes[0].legend(loc="upper left", ncol=2)
-    axes[-1].set_xlabel("Recursive rollout step")
+    axes[-1].set_xlabel("递归预测步数")
     error = float(trace["candidate_rollout_nrmse"].iloc[0])
-    fig.suptitle(f"Representative H50 rollout (median-error candidate; NRMSE={error:.3f})", fontsize=10, fontweight="bold")
-    fig.text(0.99, 0.002, "Recorded actions; median-error deterministic validation candidate", ha="right", fontsize=6.5, color="#4C5964")
+    fig.suptitle(f"代表性 H50 多步递归预测轨迹（NRMSE={error:.3f}）", fontsize=10, fontweight="bold")
+    fig.text(0.99, 0.002, "动作来自记录轨迹；所示轨迹的预测误差接近候选轨迹中位数", ha="right", fontsize=6.5, color="#4C5964")
     save_figure(fig, "fig4_representative_rollout")
 
 
@@ -297,39 +306,27 @@ def _point_summary(ax: mpl.axes.Axes, values: Iterable[float], x: float, color: 
 def figure_5_strategy() -> None:
     episodes = pd.read_csv(ROOT / "outputs/metrics/main_system_matrix_development_episodes.csv")
     episodes["strategy"] = episodes["strategy"].map(_method_name)
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 3.65), sharey=False)
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 3.65), sharey=True)
     for panel_index, (label, scale, ax) in enumerate(zip("abc", ["M-100", "M-1000", "M-10000"], axes)):
         subset = episodes[episodes["dataset_scale"] == scale]
         for index, strategy in enumerate(STRATEGIES):
             values = subset[subset["strategy"] == strategy]["episode_return"].values
             if scale == "M-100" and strategy == "iCEM":
-                ax.scatter(index, -374000, marker="v", s=35, color=STRATEGY_COLORS[strategy], clip_on=False, zorder=4)
-                ax.text(index, -366000, "off-scale", rotation=90, va="bottom", ha="center", fontsize=6.2, color=STRATEGY_COLORS[strategy])
+                ax.annotate(
+                    "iCEM: -2.65M\n（超出显示范围）",
+                    xy=(index, -378000), xytext=(index, -366000),
+                    ha="center", va="bottom", fontsize=6.2, color=STRATEGY_COLORS[strategy],
+                    arrowprops={"arrowstyle": "-|>", "color": STRATEGY_COLORS[strategy], "lw": 1.0},
+                )
                 continue
             _point_summary(ax, values, index, STRATEGY_COLORS[strategy], 100 + panel_index * 10 + index)
-        ax.set_xticks(range(4), STRATEGIES, rotation=24, ha="right")
-        ax.set_title(scale, fontweight="bold")
+        ax.set_xticks(range(4), STRATEGIES, rotation=18, ha="right")
+        ax.set_title(scale.replace("-", ""), fontweight="bold")
         ax.grid(axis="y", alpha=0.22)
         panel_label(ax, label)
-        if scale == "M-100":
-            ax.set_ylim(-375000, -255000)
-            inset = ax.inset_axes([0.07, 0.08, 0.24, 0.30])
-            bad = subset[subset["strategy"] == "iCEM"]["episode_return"].values
-            _point_summary(inset, bad, 0, STRATEGY_COLORS["iCEM"], 222)
-            inset.set_xlim(-0.3, 0.3)
-            inset.set_ylim(-2_665_000, -2_630_000)
-            inset.set_xticks([])
-            inset.set_yticks([-2_660_000, -2_640_000])
-            inset.yaxis.set_major_formatter(
-                mpl.ticker.FuncFormatter(lambda value, _pos: f"{value / 1e6:.3f}M")
-            )
-            inset.set_title("iCEM", fontsize=6.5)
-            inset.tick_params(axis="y", labelsize=5.5)
-            inset.grid(axis="y", alpha=0.18)
-        else:
-            ax.set_ylim(-390000, -195000)
-    axes[0].set_ylabel("Episode cumulative reward (higher is better)")
-    fig.text(0.5, -0.025, "Dots: development seeds 42-46; filled marker and error bar: mean +/- population SD", ha="center", fontsize=6.7, color="#4C5964")
+        ax.set_ylim(-380000, -200000)
+    axes[0].set_ylabel("1000步累计奖励（越高越好）")
+    fig.text(0.5, -0.025, "空心点表示每次独立仿真；实心点和误差条表示均值与标准差", ha="center", fontsize=6.7, color="#4C5964")
     fig.tight_layout()
     save_figure(fig, "fig5_strategy_comparison")
 
@@ -345,17 +342,18 @@ def figure_6_cross() -> None:
             _point_summary(panel, values, index, ARCH_COLORS[architecture], 300 + index)
         panel.set_xticks(
             range(5),
-            ["MLP", "GRU", "LSTM", "Transformer-\n2L", "Transformer-\n4L"],
-            rotation=16,
+            ARCHITECTURES,
+            rotation=28,
             ha="right",
         )
-        panel.set_title(strategy, fontweight="bold")
-        panel.set_ylabel("Episode cumulative reward")
+        panel.tick_params(axis="x", labelsize=6.5)
+        panel.set_title(f"固定 {strategy}", fontweight="bold")
+        panel.set_ylabel("1000步累计奖励")
         panel.grid(axis="y", alpha=0.22)
         panel_label(panel, label)
     axes[0].set_ylim(-355000, -200000)
     axes[1].set_ylim(-291000, -274000)
-    fig.text(0.5, -0.02, "M1000; only World Model architecture changes within each panel; n=5 seeds", ha="center", fontsize=6.7, color="#4C5964")
+    fig.text(0.5, -0.02, "M1000；每个面板内只改变世界模型；每种组合包含5次独立仿真", ha="center", fontsize=6.7, color="#4C5964")
     save_figure(fig, "fig6_world_model_strategy_cross")
 
 
@@ -373,26 +371,29 @@ def figure_7_final() -> None:
     ]
     fig, ax = plt.subplots(figsize=(7.2, 4.0))
     box = ax.boxplot(
-        [behavior], positions=[0], widths=0.42, patch_artist=True, showfliers=False,
+        [behavior], positions=[0], widths=0.48, patch_artist=True, showfliers=False,
         medianprops={"color": "#333333", "linewidth": 1.2},
         boxprops={"facecolor": "#F3F4F5", "edgecolor": "#6C757D", "linewidth": 1.2},
         whiskerprops={"color": "#6C757D"}, capprops={"color": "#6C757D"},
     )
     del box
-    for index, (name, values, color) in enumerate(groups, start=1):
+    for index, (name, values, color) in enumerate(groups, start=2):
         _point_summary(ax, values, index, color, 400 + index)
     ax.set_xticks(
-        range(5),
-        ["Original Behavior\n(dataset trajectories)"] + [group[0] for group in groups],
-        rotation=12,
-        ha="right",
+        [0, 2, 3, 4, 5],
+        ["原始行为\n（数据集历史轨迹）"] + [group[0] for group in groups],
+        rotation=0,
+        ha="center",
     )
-    ax.set_ylabel("Episode cumulative reward (higher is better)")
+    ax.set_xlim(-0.65, 5.55)
+    ax.set_ylabel("1000步累计奖励（越高越好）")
     ax.set_ylim(-297000, -210000)
     ax.grid(axis="y", alpha=0.22)
-    ax.text(0, -295000, "n=1000\nunpaired", ha="center", va="bottom", fontsize=6.5, color="#6C757D")
-    ax.text(2.5, -295000, "online NeoRL simulator: n=10 untouched seeds each", ha="center", va="bottom", fontsize=6.5, color="#4C5964")
-    ax.set_title("Final long-horizon control evaluation", fontweight="bold", loc="left")
+    ax.axvline(1.15, color="#AAB0B5", linewidth=1.0, linestyle="--")
+    ax.text(0.28, 1.03, "数据集历史表现", transform=ax.transAxes, ha="center", va="bottom", fontsize=7.3, fontweight="bold", color="#5F6B73")
+    ax.text(0.72, 1.03, "NeoRL 仿真验证", transform=ax.transAxes, ha="center", va="bottom", fontsize=7.3, fontweight="bold", color="#2A6F69")
+    ax.text(3.5, -295000, "每个空心点表示一次独立仿真", ha="center", va="bottom", fontsize=6.5, color="#4C5964")
+    ax.set_title("最终长期控制效果", fontweight="bold", loc="left")
     save_figure(fig, "fig7_final_simulator")
 
 
@@ -404,20 +405,20 @@ def figure_8_kl() -> None:
     hist_without = pd.read_csv(ROOT / "outputs/metrics/mbppo_ib_m1000_gru_without_kl_training.csv")
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.6), constrained_layout=True)
     for index, (name, values, color) in enumerate(
-        [("MB-PPO", without_kl, "#C44E52"), ("MB-PPO + KL", with_kl, STRATEGY_COLORS["MB-PPO"])]
+        [("无 KL 约束", without_kl, "#C44E52"), ("有 KL 约束", with_kl, STRATEGY_COLORS["MB-PPO"])]
     ):
         _point_summary(axes[0], values, index, color, 500 + index)
-    axes[0].set_xticks([0, 1], ["MB-PPO\nwithout KL", "MB-PPO\nwith KL"])
-    axes[0].set_ylabel("Episode cumulative reward")
-    axes[0].set_title("Simulator outcome", fontweight="bold")
+    axes[0].set_xticks([0, 1], ["MB-PPO\n无 KL 约束", "MB-PPO\n有 KL 约束"])
+    axes[0].set_ylabel("1000步累计奖励")
+    axes[0].set_title("仿真累计奖励", fontweight="bold")
     axes[0].grid(axis="y", alpha=0.22)
     panel_label(axes[0], "a")
-    axes[1].plot(hist_without["gradient_step"], hist_without["behavior_kl"], color="#C44E52", linewidth=1.4, label="without KL")
-    axes[1].plot(hist_with["gradient_step"], hist_with["behavior_kl"], color=STRATEGY_COLORS["MB-PPO"], linewidth=1.4, label="with KL")
+    axes[1].plot(hist_without["gradient_step"], hist_without["behavior_kl"], color="#C44E52", linewidth=1.4, label="无 KL 约束")
+    axes[1].plot(hist_with["gradient_step"], hist_with["behavior_kl"], color=STRATEGY_COLORS["MB-PPO"], linewidth=1.4, label="有 KL 约束")
     axes[1].set_yscale("symlog", linthresh=0.1)
-    axes[1].set_xlabel("PPO gradient step")
-    axes[1].set_ylabel(r"Behavior divergence $D_{KL}(\pi_b\Vert\pi)$")
-    axes[1].set_title("Policy departure from behavior", fontweight="bold")
+    axes[1].set_xlabel("PPO 更新步数")
+    axes[1].set_ylabel(r"策略偏离程度 $D_{KL}(\pi_b\Vert\pi)$")
+    axes[1].set_title("策略与行为策略的偏离", fontweight="bold")
     axes[1].grid(alpha=0.22)
     axes[1].legend()
     panel_label(axes[1], "b")
@@ -435,11 +436,11 @@ def latex_return(mean: float, std: float) -> str:
 def generate_tables(wm: pd.DataFrame) -> None:
     architecture_rows = []
     config = {
-        "MLP": ("无显式时序递归", "2$\\times$256 MLP, dropout 0.1"),
-        "GRU": ("门控递归状态", "2层, hidden 128, action branch 64"),
-        "LSTM": ("带记忆单元的递归状态", "2层, hidden 128, action branch 64"),
-        "Transformer-2L": ("自注意力历史编码", "$d=64$, 4 heads, FFN 128, 2层"),
-        "Transformer-4L": ("自注意力历史编码", "$d=64$, 4 heads, FFN 128, 4层"),
+        "MLP": ("无显式时序递归", "2$\\times$256，dropout 0.1"),
+        "GRU": ("门控递归状态", "2层，隐状态128，动作分支64"),
+        "LSTM": ("带记忆单元的递归状态", "2层，隐状态128，动作分支64"),
+        "Transformer-2L": ("自注意力历史编码", "$d=64$，4头，FFN 128，2层"),
+        "Transformer-4L": ("自注意力历史编码", "$d=64$，4头，FFN 128，4层"),
     }
     for architecture in ARCHITECTURES:
         row = wm[wm["architecture"] == architecture].iloc[0]
@@ -449,12 +450,12 @@ def generate_tables(wm: pd.DataFrame) -> None:
     table1 = r"""
 \begin{table}[H]
 \centering
-\caption{World Model architectures. 参数量不随数据规模改变。}
+\caption{世界模型架构。参数量不随数据规模改变。}
 \label{tab:architectures}
 \small
 \begin{tabularx}{\textwidth}{lXXr}
 \toprule
-Architecture & Temporal modeling & Main configuration & Parameters \\
+模型架构 & 时间信息建模方式 & 主要配置 & 参数量 \\
 \midrule
 """ + "\n".join(architecture_rows) + r"""
 \bottomrule
@@ -474,12 +475,12 @@ Architecture & Temporal modeling & Main configuration & Parameters \\
     table2 = r"""
 \begin{table}[H]
 \centering
-\caption{Validation-only protocol selected World Models. H50仅用于长期稳定性诊断。}
+\caption{统一验证选出的世界模型。H50 仅用于长期稳定性诊断。}
 \label{tab:selected_wm}
 \small
 \begin{tabular}{lllrrrrr}
 \toprule
-Dataset & Architecture & Epoch & One-step & H5 & H10 & H20 & H50 \\
+数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
@@ -500,12 +501,12 @@ Dataset & Architecture & Epoch & One-step & H5 & H10 & H20 & H50 \\
     table3 = r"""
 \begin{table}[H]
 \centering
-\caption{Transformer depth ablation. 单元格为 one-step / mean(H5,H10,H20)；差值为4L减2L，负值更优。}
+\caption{Transformer 深度消融。单元格为单步 NRMSE / H5、H10、H20 平均 NRMSE；差值为4L减2L，负值表示4L更优。}
 \label{tab:depth}
 \small
 \begin{tabular}{lccc}
 \toprule
-Scale & Transformer-2L & Transformer-4L & Difference \\
+数据规模 & Transformer-2L & Transformer-4L & 差值 \\
 \midrule
 """ + "\n".join(depth_rows) + r"""
 \bottomrule
@@ -526,13 +527,13 @@ Scale & Transformer-2L & Transformer-4L & Difference \\
     table4 = r"""
 \begin{table}[H]
 \centering
-\caption{Development strategy matrix (seeds 42--46). 数值为 episode cumulative reward 的 mean $\pm$ population SD，越高越好。}
+\caption{不同数据规模下的策略累计奖励。每种组合包含5次独立仿真，数值为均值 $\pm$ 标准差，越高越好。}
 \label{tab:strategy_matrix}
 \scriptsize
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lrrrr}
 \toprule
-Dataset & CEM & iCEM & MPPI & MB-PPO \\
+数据规模 & CEM & iCEM & MPPI & MB-PPO \\
 \midrule
 """ + "\n".join(matrix_rows) + r"""
 \bottomrule
@@ -545,8 +546,8 @@ Dataset & CEM & iCEM & MPPI & MB-PPO \\
     bc = final_episodes[final_episodes["strategy"] == "BC"]["episode_return"].values
     behavior = np.asarray(json.loads((ROOT / "outputs/metrics/strategy_ib_m1000.json").read_text(encoding="utf-8"))["original_behavior_reference"]["returns"])
     final_rows = [
-        f"原始行为数据参考值（Original Behavior） & NeoRL dataset trajectories & {latex_return(behavior.mean(), behavior.std())} & -- & -- \\\\ ",
-        f"BC & NeoRL simulator & {latex_return(bc.mean(), bc.std())} & 0 & -- \\\\ ",
+        f"原始行为（数据集历史轨迹） & NeoRL 数据集历史轨迹 & {latex_return(behavior.mean(), behavior.std())} & -- \\\\ ",
+        f"BC & NeoRL 仿真环境 & {latex_return(bc.mean(), bc.std())} & 0 \\\\ ",
     ]
     names = {
         "M-100": "M100: GRU + CEM",
@@ -555,19 +556,19 @@ Dataset & CEM & iCEM & MPPI & MB-PPO \\
     }
     for _, row in final_summary.iterrows():
         final_rows.append(
-            f"{names[row['dataset_scale']]} & NeoRL simulator & {latex_return(row['mean_return'], row['std_return'])} & "
-            f"{row['mean_delta_vs_bc']:+,.0f} & {100 * row['win_rate_vs_bc']:.0f}\\% \\\\"
+            f"{names[row['dataset_scale']]} & NeoRL 仿真环境 & {latex_return(row['mean_return'], row['std_return'])} & "
+            f"{row['mean_delta_vs_bc']:+,.0f} \\\\"
         )
     table5 = r"""
 \begin{table}[H]
 \centering
-\caption{Final NeoRL evaluation. Online systems use untouched seeds 100--109. Original Behavior来自数据集已有轨迹，不是同seed在线部署。}
+\caption{最终 NeoRL 控制结果。仿真方法在10组未参与模型和策略选择的独立随机初始条件下评价；原始行为来自数据集已有轨迹。}
 \label{tab:final}
 \scriptsize
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{llrrr}
+\begin{tabular}{llrr}
 \toprule
-Method/System & Evaluation source & Episode return & $\Delta$ vs BC & Win rate \\
+方法或系统 & 评价来源 & 1000步累计奖励 & 相对 BC 变化 \\
 \midrule
 """ + "\n".join(final_rows) + r"""
 \bottomrule
@@ -577,21 +578,29 @@ Method/System & Evaluation source & Episode return & $\Delta$ vs BC & Win rate \
 
     t2 = wm[(wm["scale"] == "M1000") & (wm["architecture"] == "Transformer-2L")].iloc[0]
     variable_names = ["setpoint", "velocity", "gain", "shift", "fatigue", "consumption"]
+    variable_labels = {
+        "setpoint": "设定值",
+        "velocity": "速度",
+        "gain": "增益",
+        "shift": "偏移",
+        "fatigue": "疲劳度",
+        "consumption": "能耗",
+    }
     variable_rows = []
     for variable in variable_names:
         variable_rows.append(
-            f"{variable.capitalize()} & {t2[f'one_step_NRMSE_{variable}']:.3f} & "
+            f"{variable_labels[variable]} & {t2[f'one_step_NRMSE_{variable}']:.3f} & "
             f"{t2[f'NRMSE_H20_{variable}']:.3f} & {t2[f'NRMSE_H50_{variable}']:.3f} \\\\"
         )
     per_variable = r"""
 \begin{table}[H]
 \centering
-\caption{M1000 Transformer-2L的per-variable NRMSE。变量的误差积累速度明显不同。}
+\caption{M1000 Transformer-2L 的变量级 NRMSE。不同物理变量的误差累积速度明显不同。}
 \label{tab:per_variable}
 \small
 \begin{tabular}{lrrr}
 \toprule
-Variable & One-step & H20 & H50 \\
+物理变量 & 单步 & H20 & H50 \\
 \midrule
 """ + "\n".join(variable_rows) + r"""
 \bottomrule
@@ -619,87 +628,87 @@ def figure_notes(wm: pd.DataFrame, trace: pd.DataFrame) -> None:
     final = pd.read_csv(ROOT / "outputs/metrics/final_selected_systems_fresh_seeds_summary.csv")
     behavior = np.asarray(json.loads((ROOT / "outputs/metrics/strategy_ib_m1000.json").read_text(encoding="utf-8"))["original_behavior_reference"]["returns"])
     selected = wm[wm["selected_best_world_model"] == True].set_index("scale")  # noqa: E712
-    notes = f"""# Figure interpretation drafts
+    notes = f"""# 图表解释草稿
 
-## Figure 1 — Overall Framework
+## 图1：项目整体技术路线
 
-Question: 历史工业轨迹如何经过World Model、策略优化和simulator评价形成闭环？
+Question: 历史工业轨迹如何经过世界模型、策略优化和仿真评价形成完整流程？
 
-Observation: World Model selection与simulator reward之间存在明确隔离；模型冻结后才进入CEM、iCEM、MPPI或MB-PPO。
+Observation: 历史状态与动作先用于训练世界模型；模型冻结后分别支持规划方法和MB-PPO，并在NeoRL仿真环境中评价累计奖励。
 
-Interpretation: 该隔离避免用控制回报反向挑选dynamics模型，保留了模型比较的因果清晰度。
+Interpretation: 该图帮助读者快速理解项目做了什么，以及预测模型如何服务于控制策略。
 
-Limitation: 流程图描述实验协议，不提供任何性能证据。
+Limitation: 流程图只描述技术路线，不提供性能证据。
 
-## Figure 2 — Architecture × Dataset Scale
+## 图2：模型架构与数据规模
 
-Question: 架构和数据规模如何共同影响单步与多步预测？
+Question: 模型架构和数据规模如何共同影响单步与多步预测？
 
-Observation: M100由GRU取得最低合规综合rollout误差；M1000和M10000由Transformer-2L胜出。M10000的Transformer-2L mean(H5,H10,H20)为{selected.loc['M10000','mean_NRMSE_H5_H10_H20']:.3f}，但不同架构并未随数据量单调改善。
+Observation: M100由GRU取得最低综合递归误差；M1000和M10000由Transformer-2L胜出。M10000的Transformer-2L在H5/H10/H20上的平均NRMSE为{selected.loc['M10000','mean_NRMSE_H5_H10_H20']:.3f}。
 
-Interpretation: 架构归纳偏置与数据覆盖发生交互；单步与递归rollout关注的误差模式不同。
+Interpretation: 模型架构与数据规模存在交互，单步预测排序与多步递归预测排序也不完全相同。
 
-Limitation: 每格是单训练seed下的validation结果，不能替代多训练seed鲁棒性研究。
+Limitation: 每格来自一次正式训练结果，不能替代多次独立训练的鲁棒性研究。
 
-## Figure 3 — Multi-step Error Accumulation
+## 图3：多步递归预测误差累积
 
-Question: one-step NRMSE为何不足以描述递归World Model？
+Question: 单步NRMSE为何不足以描述需要递归使用的世界模型？
 
-Observation: M1000中五个模型的one-step都约为0.17--0.19，但H20和H50明显分离；Transformer-2L在H5--H20综合最低，而Transformer-4L在H50更低。
+Observation: M1000中五个模型的单步误差接近，但H20和H50明显分离；Transformer-2L在H5--H20综合最低，Transformer-4L在H50更低。
 
-Interpretation: 小的单步偏差在闭环递归更新中会以变量相关方式传播，短中期稳定性需要直接评价。
+Interpretation: 小的单步偏差会在递归更新中传播，短中期稳定性需要直接评价。
 
-Limitation: 连接线不表示未测horizon处的插值性能。
+Limitation: 连接线只辅助观察，不表示未测步数的插值性能。
 
-## Figure 4 — Representative H50 Rollout
+## 图4：代表性H50轨迹
 
-Question: 代表性连续轨迹上的预测漂移是什么形态？
+Question: 代表性连续轨迹上的预测偏差如何随时间演化？
 
-Observation: 所示轨迹在101个确定性候选起点中最接近中位H50误差，综合NRMSE为{trace['candidate_rollout_nrmse'].iloc[0]:.3f}；velocity、fatigue和consumption呈现不同的漂移速度。
+Observation: 所示轨迹的综合NRMSE为{trace['candidate_rollout_nrmse'].iloc[0]:.3f}，速度、疲劳度和能耗呈现不同的偏差累积方式。
 
-Interpretation: 同一个整体NRMSE背后可能包含非常不同的变量级误差，工业控制应监控关键变量而非只看总分。
+Interpretation: 整体NRMSE背后可能包含不同的变量级误差，工业控制需要同时监控关键变量。
 
-Limitation: 一条代表轨迹不能替代全体rollout起点的统计结果。
+Limitation: 一条代表轨迹不能替代全部验证轨迹的统计结果。
 
-## Figure 5 — Strategy Comparison
+## 图5：不同数据规模下的策略比较
 
-Question: 每个数据规模固定其dynamics-selected World Model后，哪种策略更强？
+Question: 每个数据规模固定世界模型后，哪种策略取得更高累计奖励？
 
-Observation: M100的CEM最高（{main[(main.dataset_scale=='M-100') & (main.strategy=='CEM')].mean_return.iloc[0]:,.0f}）；M1000和M10000的MPPI最高。M100 iCEM约为{main[(main.dataset_scale=='M-100') & (main.strategy=='iCEM')].mean_return.iloc[0]:,.0f}，出现严重失效。
+Observation: M100的CEM最高（{main[(main.dataset_scale=='M-100') & (main.strategy=='CEM')].mean_return.iloc[0]:,.0f}）；M1000和M10000的MPPI最高。M100的iCEM约为{main[(main.dataset_scale=='M-100') & (main.strategy=='iCEM')].mean_return.iloc[0]:,.0f}，明显超出主图范围。
 
-Interpretation: 规划器能力与模型质量共同决定真实控制效果；优化器可能利用低质量World Model的错误高收益区域。
+Interpretation: 规划器能力与世界模型质量共同影响真实控制效果，优化器可能放大低质量模型的误差。
 
-Limitation: iCEM的toy objective已通过，因此该图不能推出iCEM一般不适合工业过程。
+Limitation: 该图不能推出iCEM普遍不适合工业过程。
 
-## Figure 6 — World Model × Downstream Strategy
+## 图6：世界模型与后续策略
 
-Question: dynamics prediction ranking是否完全决定downstream control ranking？
+Question: 预测误差排序是否完全决定后续控制排序？
 
-Observation: M1000中MPPI在Transformer-4L上最高（{cross[(cross.architecture=='Transformer-4L') & (cross.strategy=='MPPI')].mean_return.iloc[0]:,.0f}），MB-PPO在LSTM上最高（{cross[(cross.architecture=='LSTM') & (cross.strategy=='MB-PPO+KL')].mean_return.iloc[0]:,.0f}），而dynamics validation选择Transformer-2L。
+Observation: M1000中MPPI在Transformer-4L上最高（{cross[(cross.architecture=='Transformer-4L') & (cross.strategy=='MPPI')].mean_return.iloc[0]:,.0f}），MB-PPO在LSTM上最高（{cross[(cross.architecture=='LSTM') & (cross.strategy=='MB-PPO+KL')].mean_return.iloc[0]:,.0f}），统一预测评价则选择Transformer-2L。
 
-Interpretation: planning与learned policy对不同误差结构的敏感性不同，通用预测误差与决策效用并非完全等价。
+Interpretation: 不同策略可能对世界模型的误差结构具有不同敏感性。
 
-Limitation: 这是当前五模型、两策略和一个数据规模上的观察，不是普遍定律，也不用于反向修改World Model选择。
+Limitation: 这是当前五种模型、两种策略和一个数据规模上的观察，不是普遍规律。
 
-## Figure 7 — Final NeoRL Simulator Result
+## 图7：最终NeoRL控制结果
 
-Question: 最终World-Model-based systems能否提高1000步累计奖励？
+Question: 最终系统能否提高1000步累计奖励？
 
-Observation: Original Behavior数据轨迹均值为{behavior.mean():,.0f}；三个最终系统相对BC的改善分别为{final.iloc[0].mean_delta_vs_bc:,.0f}、{final.iloc[1].mean_delta_vs_bc:,.0f}和{final.iloc[2].mean_delta_vs_bc:,.0f}，且十个最终seed的win rate均为100%。
+Observation: 原始行为数据轨迹均值为{behavior.mean():,.0f}；三个最终系统相对BC的改善分别为{final.iloc[0].mean_delta_vs_bc:,.0f}、{final.iloc[1].mean_delta_vs_bc:,.0f}和{final.iloc[2].mean_delta_vs_bc:,.0f}。
 
-Interpretation: 经过validation-only模型选择和冻结策略选择后，基于World Model的优化在未使用simulator seeds上保持了长期回报提升。
+Interpretation: 基于世界模型的策略优化在独立仿真条件下保持了长期回报提升。
 
-Limitation: Original Behavior来自数据集已有轨迹，不是与在线系统同seed部署的配对基线；结果也只覆盖NeoRL Industrial Benchmark。
+Limitation: 原始行为来自数据集已有轨迹，与仿真策略的评价来源不同；结果也只覆盖当前NeoRL工业控制基准。
 
-## Figure 8 — MB-PPO KL Ablation
+## 图8：MB-PPO行为KL消融
 
-Question: behavior KL是否抑制MB-PPO利用World Model误差？
+Question: 行为KL约束是否限制MB-PPO偏离历史行为分布？
 
-Observation: 不加KL的平均return约为-883,709，加KL后为-284,715；dense training history显示无KL策略与行为分布的偏离显著扩大。
+Observation: 不加KL的平均累计奖励约为-883,709，加KL后为-284,715；训练记录显示无KL策略与行为分布的偏离显著扩大。
 
-Interpretation: 在该M1000 GRU消融中，behavior constraint显著降低了model exploitation风险。
+Interpretation: 在当前消融设置中，行为KL约束显著降低了模型利用风险。
 
-Limitation: 消融只覆盖一个World Model和一个训练seed，不能量化最佳KL系数或保证所有场景都有效。
+Limitation: 消融只覆盖一个世界模型和一次策略训练，不能量化最佳KL系数或保证所有场景都有效。
 """
     (GENERATED / "figure_explanations.md").write_text(notes, encoding="utf-8")
 

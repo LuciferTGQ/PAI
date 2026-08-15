@@ -1,20 +1,20 @@
-\subsection{Compared architectures}
+\subsection{模型架构}
 
-本文比较五类正式架构。MLP把完整历史窗口展平后进行静态非线性映射；GRU和LSTM通过递归隐状态提取时间依赖，其中GRU使用较简化的门控结构，LSTM使用显式记忆单元；Transformer-2L和Transformer-4L通过self-attention直接建模30帧之间的依赖\cite{vaswani2017attention}。Transformer深度实验只改变层数2到4，$d_{model}$、head数、FFN宽度和dropout保持不变。
+本文比较五类状态演化模型。MLP 将完整历史窗口展平后进行静态非线性映射；GRU 和 LSTM 通过递归隐状态提取时间依赖，其中 GRU 使用较简化的门控结构，LSTM 使用显式记忆单元；Transformer-2L 和 Transformer-4L 通过自注意力直接建模30帧之间的依赖\cite{vaswani2017attention}。主要结构与参数量见\cref{tab:architectures}。
 
 \input{generated/table1_architectures}
 
-所有模型共享数据划分、normalization、optimizer、trainer、checkpoint规则和evaluation protocol。不同架构的参数量约为9万至23万，规模足够轻量，便于突出时序归纳偏置而不是单纯扩大容量。
+同一数据规模内，不同模型使用相同的数据划分、归一化方式、训练预算、优化器和模型选择规则，仅改变模型架构。Transformer-2L 与 Transformer-4L 除编码层数外，其余结构与训练设置保持一致，从而使深度消融具有明确的控制变量。跨数据规模不通过原始训练轮数比较优劣，因为每轮训练对应的数据量不同。
 
-\subsection{Validation metrics and selection}
+\subsection{预测评价与模型选择}
 
-NRMSE使用固定common-validation目标标准差归一化，使不同架构和数据规模可以在同一口径下比较。评价包括one-step NRMSE，以及使用真实记录动作但递归更新预测状态的H1、H5、H10、H20和H50 NRMSE。Per-variable error用于判断某个整体指标是否被特定物理变量主导。
+为保证不同模型架构和数据规模的预测误差可以直接比较，所有候选模型均在同一组验证轨迹上重新计算 NRMSE，并采用相同的归一化尺度。本文将这一评价方式称为统一验证。评价包括单步 NRMSE，以及使用记录动作、但递归更新预测状态得到的 H1、H5、H10、H20 和 H50 NRMSE。变量级误差用于判断整体指标是否由少数物理变量主导。
 
-模型选择只使用validation dynamics：
+世界模型只根据统一验证的状态预测结果选择：
 \begin{enumerate}
-  \item 找到该数据规模下最低的one-step NRMSE；
-  \item 保留满足 $\mathrm{one\mbox{-}step}\leq1.10\times\mathrm{best\ one\mbox{-}step}$ 的候选；
-  \item 在候选中最小化 $\mathrm{mean}(\mathrm{H5},\mathrm{H10},\mathrm{H20})$；
-  \item H50仅作为长期rollout稳定性诊断。
+  \item 找到该数据规模下最低的单步 NRMSE；
+  \item 保留单步 NRMSE 不超过最优值1.10倍的候选模型；
+  \item 在候选模型中最小化 $\mathrm{mean}(\mathrm{H5},\mathrm{H10},\mathrm{H20})$；
+  \item 将 H50 作为长期递归稳定性诊断，不单独用于选择模型。
 \end{enumerate}
-这个规则先排除单步明显不合格的模型，再选择短中期递归预测最稳定者。任何CEM、iCEM、MPPI或MB-PPO simulator reward都不进入上述流程。
+该规则先排除单步预测明显不合格的模型，再比较短中期递归预测的稳定性。CEM、iCEM、MPPI、MB-PPO 的仿真奖励均不进入世界模型选择流程。

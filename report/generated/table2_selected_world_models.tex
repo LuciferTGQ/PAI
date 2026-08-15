@@ -1,12 +1,12 @@
 
 \begin{table}[H]
 \centering
-\caption{Validation-only protocol selected World Models. H50仅用于长期稳定性诊断。}
+\caption{统一验证选出的世界模型。H50 仅用于长期稳定性诊断。}
 \label{tab:selected_wm}
 \small
 \begin{tabular}{lllrrrrr}
 \toprule
-Dataset & Architecture & Epoch & One-step & H5 & H10 & H20 & H50 \\
+数据规模 & 模型架构 & 选定轮次 & 单步 & H5 & H10 & H20 & H50 \\
 \midrule
 M100 & GRU & 35 & 0.180 & 0.223 & 0.273 & 0.374 & 0.649 \\
 M1000 & Transformer-2L & 20 & 0.183 & 0.243 & 0.305 & 0.405 & 0.774 \\

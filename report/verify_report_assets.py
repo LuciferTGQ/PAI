@@ -1,7 +1,7 @@
 """Lightweight consistency checks for the final report artifact.
 
-This verifier deliberately checks only report-facing assets and exported data.
-It does not rerun training, the simulator, or the historical data audit.
+The verifier checks report-facing assets and exported data only. It never
+reruns training, the simulator, or the historical data audit.
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ def main() -> None:
         world_models = list(csv.DictReader(handle))
     matrix = {(row["scale"], row["architecture"]) for row in world_models}
     if len(matrix) != 15:
-        failures.append(f"World Model matrix has {len(matrix)} unique scale-architecture pairs")
+        failures.append(f"World Model matrix has {len(matrix)} unique pairs")
     selected = {
         row["scale"]: row["architecture"]
         for row in world_models
@@ -89,17 +89,29 @@ def main() -> None:
         r"fair\s+Transformer",
         r"BestWM@",
         r"offline empirical reference",
+        r"common-validation",
+        r"population\s+SD",
+        r"win\s*rate",
+        r"untouched\s+seeds?",
+        r"seeds?\s+\d",
+        r"42--46",
+        r"100--109",
+        r"本次考核",
+        r"task\s+coverage",
+        r"Task\s+[123]",
+        r"PAI Industrial World Model Assessment",
     ]
     for pattern in forbidden:
         if re.search(pattern, visible_text, flags=re.IGNORECASE):
             failures.append(f"forbidden report-facing term found: {pattern}")
 
     required_phrases = [
+        "面向工业过程控制的世界模型",
         "原始行为数据参考值（Original Behavior）",
-        "simulator reward",
-        "不参与World Model",
-        "behavior KL",
-        "Industrial Applications and Deployment Considerations",
+        "仿真奖励只用于策略优化和最终控制评价",
+        "本文将这一评价方式称为统一验证",
+        "工业应用与部署思考",
+        "相对 BC 分别提高14,229、68,282和64,535",
     ]
     for phrase in required_phrases:
         if phrase not in visible_text:

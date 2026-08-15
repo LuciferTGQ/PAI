@@ -1,18 +1,18 @@
 
 \begin{table}[H]
 \centering
-\caption{World Model architectures. 参数量不随数据规模改变。}
+\caption{世界模型架构。参数量不随数据规模改变。}
 \label{tab:architectures}
 \small
 \begin{tabularx}{\textwidth}{lXXr}
 \toprule
-Architecture & Temporal modeling & Main configuration & Parameters \\
+模型架构 & 时间信息建模方式 & 主要配置 & 参数量 \\
 \midrule
-MLP & 无显式时序递归 & 2$\times$256 MLP, dropout 0.1 & 114,438 \\
-GRU & 门控递归状态 & 2层, hidden 128, action branch 64 & 177,030 \\
-LSTM & 带记忆单元的递归状态 & 2层, hidden 128, action branch 64 & 227,462 \\
-Transformer-2L & 自注意力历史编码 & $d=64$, 4 heads, FFN 128, 2层 & 91,142 \\
-Transformer-4L & 自注意力历史编码 & $d=64$, 4 heads, FFN 128, 4层 & 158,086 \\
+MLP & 无显式时序递归 & 2$\times$256，dropout 0.1 & 114,438 \\
+GRU & 门控递归状态 & 2层，隐状态128，动作分支64 & 177,030 \\
+LSTM & 带记忆单元的递归状态 & 2层，隐状态128，动作分支64 & 227,462 \\
+Transformer-2L & 自注意力历史编码 & $d=64$，4头，FFN 128，2层 & 91,142 \\
+Transformer-4L & 自注意力历史编码 & $d=64$，4头，FFN 128，4层 & 158,086 \\
 \bottomrule
 \end{tabularx}
 \end{table}

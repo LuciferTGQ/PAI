@@ -1,44 +1,40 @@
-\subsection{Architecture $\times$ Data Scale}
+\subsection{模型架构与数据规模}
 
-正式比较包含5种架构与3个数据规模，共15组World Model。\Cref{fig:wm_heatmaps}用两个annotated heatmap分别回答单步与多步问题；每个单元格都来自同一common-validation protocol，橙色边框表示最终validation选择。
+正式比较包含5种架构与3个数据规模，共15组世界模型。\Cref{fig:wm_heatmaps}以两个热图分别展示单步预测误差与 H5、H10、H20 的平均递归预测误差；所有单元格均来自统一验证，边框表示各数据规模最终选定的模型。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{fig2_world_model_heatmaps.pdf}
-  \caption{\textbf{Architecture and dataset scale jointly shape dynamics accuracy.} \textbf{a}, one-step NRMSE。\textbf{b}, mean NRMSE at H5/H10/H20。数值越低越好，橙色边框表示validation-only规则选出的模型。M100偏好GRU；M1000和M10000偏好Transformer-2L。两张heatmap的排序并不完全一致，说明单步指标不能替代递归评价。}
+  \caption{\textbf{模型架构与数据规模对预测误差的共同影响。} \textbf{a}，单步预测 NRMSE；\textbf{b}，H5、H10 和 H20 的平均 NRMSE。数值越低表示预测越准确，边框标出最终选定模型。单步预测排序与多步递归预测排序并不完全相同，不同数据规模下最合适的模型也存在差异。}
   \label{fig:wm_heatmaps}
 \end{figure}
 
-M100中，GRU在合格one-step候选里取得最低的短中期综合误差；M1000与M10000则由Transformer-2L胜出。该结果不支持``某一架构永远最好''，而是说明时序归纳偏置与数据规模存在交互。尤其是M10000中MLP并未因数据更多而自动获得更好结果，提示数据覆盖、优化预算和架构表达能力需要共同考虑。
+M100 中，GRU 在单步误差合格的候选模型中取得最低短中期综合误差；M1000 与 M10000 则由 Transformer-2L 胜出。结果表明，模型架构与数据规模之间存在交互，不能据此宣称某种架构在所有数据条件下都最优。尤其是 M10000 中 MLP 并未因为数据更多而自动获得更低误差，提示数据覆盖、训练预算和模型表达能力需要共同考虑。
 
 \input{generated/table2_selected_world_models}
 
-\subsection{One-step and multi-step prediction}
+\subsection{单步预测与多步递归误差}
 
-One-step只评价在真实历史状态条件下预测下一帧；实际规划会把预测值重新输入模型，因此误差会改变后续输入分布。\Cref{fig:multistep}固定M1000并展示五个正式architecture checkpoint在五个真实评价horizon上的结果，不做插值或平滑。
+单步预测只评价在真实历史状态条件下预测下一帧；实际规划会把预测值重新输入模型，因此误差还会改变后续输入分布。\Cref{fig:multistep}固定 M1000，展示五种架构在五个真实评价步数上的结果。图中不包含插值或平滑，连接线仅用于辅助观察。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\textwidth]{fig3_multistep_error.pdf}
-  \caption{\textbf{Recursive prediction error accumulation at M1000.} 五个marker对应H1、H5、H10、H20和H50的真实评价点，连接线只辅助阅读。尽管H1均接近0.2，不同架构在H20--H50明显分离；Transformer-2L在H5--H20综合最好，而Transformer-4L的H50更低。}
+  \caption{\textbf{M1000 上的多步递归预测误差累积。} 标记点对应1、5、10、20和50步真实评价结果，连接线只作为视觉辅助。五种架构的短期误差较接近，但在20至50步明显分离；Transformer-2L 的 H5--H20 综合误差最低，而 Transformer-4L 的 H50 误差更低。}
   \label{fig:multistep}
 \end{figure}
 
-Per-variable结果进一步说明overall NRMSE并不等同于每个工业变量都同样准确。Setpoint在该benchmark中较稳定，而velocity、shift、fatigue和consumption的误差演化不同。\Cref{tab:per_variable}列出M1000 Transformer-2L的代表性变量级结果。
-
-\input{generated/table_per_variable}
-
-\Cref{fig:rollout}提供一条直观轨迹。为避免选择最好看的样本，先在101个确定性validation起点上计算H50误差，再选择最接近中位误差的起点；动作来自记录轨迹，只有状态递归使用模型预测。
+不同物理变量的误差累积速度存在明显差异，完整变量级结果移至附录A。\Cref{fig:rollout}保留速度、疲劳度和能耗三类代表性变量：速度反映动态控制状态，疲劳度和能耗则直接进入奖励函数。为避免只展示表现最好的样本，从候选验证轨迹中选择预测误差接近中位数的轨迹作为代表。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.94\textwidth]{fig4_representative_rollout.pdf}
-  \caption{\textbf{Representative H50 recursive rollout.} \textbf{a--c}, velocity、fatigue与consumption的ground truth和prediction。该轨迹按预先规定的中位误差规则选择，不代表最好或最差情况。短期趋势可以跟随真实状态，但变量级偏差会以不同方式累积；总体结论仍应以全体validation起点的NRMSE为准。}
+  \caption{\textbf{代表性的 H50 多步递归预测轨迹。} \textbf{a--c} 分别展示速度、疲劳度和能耗的真实状态与模型预测。该轨迹的预测误差接近候选验证轨迹的中位数，不代表最好或最差情况。短期趋势能够跟随真实状态，但不同变量的偏差以不同方式累积；总体结论仍以全部验证轨迹的 NRMSE 为准。}
   \label{fig:rollout}
 \end{figure}
 
-\subsection{Transformer depth ablation}
+\subsection{Transformer 深度消融}
 
 \input{generated/table3_depth_ablation}
 
-M100中4L改善了多步综合误差但单步略差；M1000中4L的H50更低，但H5--H20综合反而更高；M10000中4L单步更好，却在H20与综合指标上落后2L。由此不能得到``层数增加会随数据规模稳定增强''的结论，也没有证据支持继续扩大到6L。这里的重点是严格控制变量后的深度效应，而不是把不同训练预算或旧结果混入比较。
+M100 中，4L 改善了多步综合误差但单步略差；M1000 中，4L 的 H50 更低，但 H5--H20 综合误差反而更高；M10000 中，4L 单步更好，却在 H20 与综合指标上落后 2L。现有结果没有显示层数增加会随数据规模扩大而稳定增强预测性能，因此不足以支持继续增加深度。

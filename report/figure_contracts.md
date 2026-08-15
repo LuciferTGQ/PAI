@@ -1,67 +1,51 @@
-# Figure contracts
+# 图表表达约定
 
-All plotting uses Python/matplotlib exclusively. Final quantitative figures are double-column compatible (approximately 178 mm wide), use editable vector text, and export PDF/SVG plus 600 dpi PNG. Error bars denote population standard deviation over simulator seeds unless stated otherwise.
+所有定量图统一使用 Python/matplotlib 生成，适配双栏宽度（约 178 mm），保留可编辑矢量文字，并同时导出 PDF、SVG 和 600 dpi PNG。误差条表示同一评价设置下独立仿真的标准差，若图注另有说明则以图注为准。
 
-## Figure 1
+## 图 1：整体技术路线
 
-Core conclusion: Dynamics validation selects a frozen World Model before model-based planning or reinforcement learning is evaluated in the simulator.
+- 核心结论：先用历史轨迹训练并依据预测指标选择世界模型，再冻结模型进行策略优化和仿真评价。
+- 主要证据：数据、世界模型、策略和 NeoRL 仿真之间的处理顺序。
+- 审阅风险：流程图不得暗示使用仿真奖励反向选择世界模型。
 
-Evidence hierarchy: workflow separation is the hero evidence; the validation-only gate is the key control.
+## 图 2：模型架构与数据规模
 
-Reviewer risk: the diagram must not imply that simulator reward selects the World Model.
+- 核心结论：世界模型精度由模型架构、数据规模和预测长度共同决定。
+- 主要证据：单步 NRMSE 与 H5/H10/H20 平均 NRMSE 的标数值热图。
+- 审阅风险：所有单元格必须来自统一的数据划分、归一化、训练和评价口径。
 
-## Figure 2
+## 图 3：多步误差累积
 
-Core conclusion: World Model accuracy depends jointly on architecture, data scale, and prediction horizon.
+- 核心结论：单步误差接近的模型可能呈现不同的递归误差累积速度。
+- 主要证据：H1、H5、H10、H20 和 H50 五个真实评价点。
+- 审阅风险：连接线只用于辅助观察，不代表插值或平滑结果。
 
-Evidence hierarchy: annotated one-step and H5/H10/H20 heatmaps are equal primary evidence.
+## 图 4：代表性长时域预测
 
-Reviewer risk: all cells must come from the same common-validation protocol.
+- 核心结论：不同物理变量在 H50 递归预测中的漂移程度不同。
+- 主要证据：速度、疲劳度和能耗的真实值与预测值对照。
+- 审阅风险：单条代表轨迹不能代替总体误差统计，汇总 NRMSE 仍是主要证据。
 
-## Figure 3
+## 图 5：不同数据规模下的策略比较
 
-Core conclusion: Similar one-step error can lead to different recursive error accumulation.
+- 核心结论：策略相对表现会随世界模型的数据规模而变化，低质量模型可能被优化器利用。
+- 主要证据：独立仿真结果、均值和标准差。
+- 审阅风险：M100 的 iCEM 极端结果必须保留数值标注，不得通过裁轴隐藏。
 
-Evidence hierarchy: the five measured horizons are primary evidence; connecting segments are only visual guides.
+## 图 6：世界模型对下游策略的影响
 
-Reviewer risk: categorical horizon positions must not be interpreted as interpolated continuous measurements.
+- 核心结论：预测指标排序与下游控制排序并不完全一致，规划和学习型策略也可能具有不同敏感性。
+- 主要证据：固定 MPPI 与固定 MB-PPO 设置的两个控制变量面板。
+- 审阅风险：该观察只适用于当前五种架构和实验设置，不应表述为普遍定律。
 
-## Figure 4
+## 图 7：最终 NeoRL 长期控制结果
 
-Core conclusion: Recursive prediction drift is variable-specific and becomes visible within an H50 rollout.
+- 核心结论：三个最终系统在 NeoRL 仿真中均提高了相对 BC 的累计奖励。
+- 主要证据：仿真结果的独立散点、均值和标准差；原始行为数据参考值单独分区显示。
+- 审阅风险：原始行为来自数据集历史轨迹，不得表述为与仿真策略严格配对的在线评价。
 
-Evidence hierarchy: ground truth versus prediction for velocity, fatigue, and consumption.
+## 图 8：MB-PPO 行为 KL 消融
 
-Reviewer risk: one representative trajectory cannot establish population-level accuracy; the aggregate NRMSE results remain primary.
-
-## Figure 5
-
-Core conclusion: Strategy ranking changes with World Model data scale, and strong optimizers can fail on weak models.
-
-Evidence hierarchy: individual matched development seeds plus mean and standard deviation.
-
-Reviewer risk: the off-scale M100 iCEM result must remain visible and numerically labeled.
-
-## Figure 6
-
-Core conclusion: Dynamics-validation ranking is not identical to downstream ranking and differs between planning and learned-policy use.
-
-Evidence hierarchy: MPPI and MB-PPO controlled panels; identical seeds and within-panel protocols.
-
-Reviewer risk: this five-architecture observation must not be generalized as a universal law.
-
-## Figure 7
-
-Core conclusion: The final selected systems improve cumulative reward over BC on untouched simulator seeds.
-
-Evidence hierarchy: ten online seed dots and mean/standard deviation; Original Behavior is visually separated as an unpaired dataset-trajectory distribution.
-
-Reviewer risk: Original Behavior must not be presented as matched-seed online evaluation.
-
-## Figure 8
-
-Core conclusion: Behavior KL limits policy divergence and prevents severe MB-PPO return collapse in the observed ablation.
-
-Evidence hierarchy: simulator-return dots plus dense gradient-step KL history.
-
-Reviewer risk: one World Model and one training seed support an ablation observation, not a universal guarantee.
+- 核心结论：在当前消融中，行为 KL 约束限制了策略偏离并避免了严重的回报下降。
+- 主要证据：仿真累计奖励和按梯度步记录的 KL 历史。
+- 审阅风险：单一世界模型和单次训练设置只支持当前消融观察，不能推出普遍保证。

@@ -1,40 +1,40 @@
-\subsection{Strategy comparison across data scales}
+\subsection{不同数据规模下的策略比较}
 
-每个数据规模固定由dynamics validation选择出的同一个World Model，再比较CEM、iCEM、MPPI与MB-PPO。所有方法使用相同development seeds 42--46、相同1000步episode和相同reward definition。因此，\cref{fig:strategy_matrix,tab:strategy_matrix}中的差异主要来自strategy与固定World Model之间的交互，而不是更换模型或seed。
+每个数据规模固定由统一预测评价选出的同一个世界模型，再比较 CEM、iCEM、MPPI 与 MB-PPO。所有策略在5组相同随机初始条件下独立重复仿真，采用相同的1000步回合与奖励定义。因此，\cref{fig:strategy_matrix}和\cref{tab:strategy_matrix}中的差异主要来自策略与固定世界模型之间的交互。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{fig5_strategy_comparison.pdf}
-  \caption{\textbf{Development strategy comparison across data scales.} \textbf{a--c}, M100、M1000和M10000。空心点为seeds 42--46，实心点及误差条为mean $\pm$ population SD。M100 iCEM明显超出主轴范围，因此在inset中保留全部五个seed。CEM在M100最高；MPPI在M1000和M10000最高。}
+  \caption{\textbf{不同数据规模下的策略控制效果。} \textbf{a--c} 分别为 M100、M1000 和 M10000。三个面板使用相同纵轴范围；空心点表示每次独立仿真，实心点和误差条表示均值与标准差。M100 的 iCEM 平均累计奖励约为 $-2.65\times10^6$，超出显示范围并在面板底部标注。CEM 在 M100 中最高，MPPI 在 M1000 和 M10000 中最高。}
   \label{fig:strategy_matrix}
 \end{figure}
 
 \input{generated/table4_strategy_matrix}
 
-M100上的iCEM和MPPI均明显落后，尤其iCEM出现一致的极低真实回报；相同算法通过了已知dynamics和cost上的deterministic optimization test，因此这里更合理的解释是弱World Model与optimizer之间发生model exploitation，而不是直接断言算法不适合Industrial Benchmark。M1000和M10000中MPPI的提升说明World Model质量是重要瓶颈。
+M100 上的 iCEM 和 MPPI 均明显落后，尤其 iCEM 出现一致的极低真实回报。由于相同算法已经在确定性优化测试中表现出基本优化能力，该结果提示弱世界模型与优化器之间可能发生模型利用现象，而不能据此断言 iCEM 普遍不适合工业过程。MPPI 在中、大规模数据下明显改善，而在小规模数据下表现下降，提示规划效果对世界模型质量较为敏感。
 
-\subsection{World Model $\times$ Strategy controlled ablation}
+\subsection{世界模型对不同策略的影响}
 
-M1000进一步完成两组控制变量实验：第一组固定MPPI配置，仅改变五种World Model；第二组固定MB-PPO训练协议，仅改变World Model。该实验研究dynamics prediction ranking与downstream control ranking是否完全一致，不用于反向修改validation-only模型选择。
+M1000 上进一步完成两组控制变量实验：第一组固定 MPPI 配置，仅改变五种世界模型；第二组固定 MB-PPO 训练设置，仅改变世界模型。该实验用于研究统一预测评价中的模型排序与后续控制效果是否完全一致，不用于反向修改世界模型的预测评价选择。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{fig6_world_model_strategy_cross.pdf}
-  \caption{\textbf{World Model architecture affects planning and learned policies differently.} \textbf{a}, 固定MPPI时五种World Model的development return。\textbf{b}, 固定MB-PPO protocol时的结果。每组$n=5$ seeds，点和误差条分别表示individual seed与mean $\pm$ population SD。MPPI在Transformer-4L上最高，而MB-PPO在LSTM上最高；dynamics validation最优仍为Transformer-2L。}
+  \caption{\textbf{不同世界模型对 MPPI 与 MB-PPO 控制效果的影响。} \textbf{a}，固定 MPPI，仅改变世界模型；\textbf{b}，固定 MB-PPO 训练设置，仅改变世界模型。每种组合包含5次独立仿真，空心点表示单次结果，实心点和误差条表示均值与标准差。两个面板纵轴范围不同，分别用于比较同一策略内部不同世界模型的相对表现，不用于直接比较两个面板的视觉差距。统一预测评价最优的 Transformer-2L 并未在每一种后续策略中都取得最高回报，这是当前实验观察而非普遍结论。}
   \label{fig:cross}
 \end{figure}
 
-\subsection{Final simulator evaluation}
+\subsection{最终控制效果}
 
-所有模型、strategy和设置冻结后，seeds 100--109才首次用于最终评价。最终系统按development结果确定：M100采用GRU+CEM，M1000与M10000采用Transformer-2L+MPPI。\Cref{fig:final,tab:final}同时展示原始行为数据参考值、BC与三个最终系统。
+模型、策略和参数确定后，在10组未参与模型与策略选择的独立随机初始条件下进行最终仿真验证。最终系统为 M100 的 GRU+CEM，以及 M1000、M10000 的 Transformer-2L+MPPI。\Cref{fig:final}和\cref{tab:final}同时展示原始行为数据参考值、BC 基础策略与三个最终系统。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{fig7_final_simulator.pdf}
-  \caption{\textbf{Final NeoRL simulator results on untouched seeds.} Original Behavior以灰色box表示NeoRL数据集1000条已有轨迹的累计奖励分布，属于unpaired dataset-trajectory reference。其余方法均部署到NeoRL simulator；空心点为seeds 100--109，实心点及误差条为mean $\pm$ population SD。三个最终系统在十个seed上均优于BC。}
+  \caption{\textbf{最终 NeoRL 长期控制结果。} 左侧灰色分布表示原始行为（数据集历史轨迹），右侧表示在 NeoRL 仿真环境中重新部署的 BC 与三个最终系统。对仿真策略，每个空心点表示一次独立仿真，实心点和误差条表示均值与标准差。原始行为数据参考值来自数据集已有轨迹，与右侧仿真结果的评价来源不同。}
   \label{fig:final}
 \end{figure}
 
 \input{generated/table5_final_evaluation}
 
-最终M100、M1000和M10000系统相对BC的平均提升分别为14,229、68,282和64,535，win rate均为100\%。这直接回答了Task 3：在当前NeoRL Industrial Benchmark设置中，经过严格模型选择和策略冻结的World-Model-based optimization能够提高长期cumulative reward。
+最终 M100、M1000 和 M10000 系统相对 BC 的平均累计奖励分别提高14,229、68,282和64,535。在10次独立仿真中，三个最终系统每次都取得高于 BC 的累计奖励。结果表明，经过统一预测评价和策略选择后，基于世界模型的优化能够在当前 NeoRL 工业控制基准中改善长期控制效果。

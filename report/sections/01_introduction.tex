@@ -1,12 +1,12 @@
-工业过程通常具有长时滞、变量耦合和直接试错成本高等特点。本文从已有工业轨迹出发，学习一个可递归预测未来状态的 World Model，再利用该模型在真实 simulator 交互之前进行动作序列优化或策略学习，最后在 NeoRL Industrial Benchmark 环境中评价1000步累计奖励。整体技术路线如\cref{fig:framework}所示。
+工业过程通常具有长时滞、变量耦合以及直接试错成本高等特点。仅依靠历史轨迹训练策略，难以在执行前回答“某个控制动作将使设备状态如何演化”；直接在真实设备上反复搜索动作则可能带来能耗、磨损和安全风险。本项目从已有工业轨迹学习可递归预测未来状态的世界模型，再利用冻结模型进行动作序列规划或策略学习，最后在 NeoRL 仿真环境中验证长期控制效果。
 
-本报告严格覆盖三项任务。Task 1研究历史状态与动作到下一状态的预测，并同时评价单步准确率与多步误差累积；Task 2研究两类基于World Model的策略优化，即CEM、iCEM和MPPI组成的Model-Based Planning，以及带behavior KL约束的MB-PPO；Task 3将基础策略和优化策略部署到NeoRL simulator，以episode cumulative reward作为主要控制指标。最后，报告单独讨论实验发现、智能制造应用与真实工业部署风险。
+整体技术路线见\cref{fig:framework}。历史状态序列和动作首先用于训练世界模型；模型通过单步预测和多步递归预测评价后被冻结，分别支持基于模型的规划方法 CEM、iCEM、MPPI，以及基于模型的强化学习方法 MB-PPO。经过优化的策略最终在 NeoRL 仿真环境中执行，以1000步累计奖励衡量长期控制效果。
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{fig1_framework.pdf}
-  \caption{\textbf{Overall framework.} 历史轨迹首先用于学习下一帧dynamics；World Model只根据validation prediction metrics选择并冻结。冻结模型随后服务于Model-Based Planning或MB-PPO，策略最终在NeoRL simulator中评价。Simulator reward不会反向参与World Model选择。}
+  \caption{\textbf{项目整体技术路线。} NeoRL 历史轨迹被整理为历史状态序列与连续动作，用于训练下一状态预测模型。世界模型经过单步与多步预测评价后被冻结，并分别服务于基于模型的规划和基于模型的强化学习；优化后的控制策略在 NeoRL 仿真环境中验证长期累计奖励。}
   \label{fig:framework}
 \end{figure}
 
-该流程的核心控制变量是把``模型预测是否可信''与``策略回报是否更高''分开回答。前者只依赖统一validation；后者在模型和策略配置冻结后才使用simulator。这样既能公平比较架构，也能观察预测性能与控制效用是否一致。
+本项目比较五类世界模型、三种规划方法和一种基于模型的强化学习方法。最终在 M100 上选择 GRU+CEM，在 M1000 与 M10000 上选择 Transformer-2L+MPPI。正文依次介绍状态与奖励定义、世界模型构建与评价、策略优化方法、仿真实验结果，以及这些结果对工业部署的启示。

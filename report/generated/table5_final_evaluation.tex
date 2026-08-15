@@ -1,19 +1,19 @@
 
 \begin{table}[H]
 \centering
-\caption{Final NeoRL evaluation. Online systems use untouched seeds 100--109. Original Behavior来自数据集已有轨迹，不是同seed在线部署。}
+\caption{最终 NeoRL 控制结果。仿真方法在10组未参与模型和策略选择的独立随机初始条件下评价；原始行为来自数据集已有轨迹。}
 \label{tab:final}
 \scriptsize
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{llrrr}
+\begin{tabular}{llrr}
 \toprule
-Method/System & Evaluation source & Episode return & $\Delta$ vs BC & Win rate \\
+方法或系统 & 评价来源 & 1000步累计奖励 & 相对 BC 变化 \\
 \midrule
-原始行为数据参考值（Original Behavior） & NeoRL dataset trajectories & -282,885 $\pm$ 1,197 & -- & -- \\
-BC & NeoRL simulator & -288,411 $\pm$ 267 & 0 & -- \\
-M100: GRU + CEM & NeoRL simulator & -274,181 $\pm$ 396 & +14,229 & 100\% \\
-M1000: Transformer-2L + MPPI & NeoRL simulator & -220,129 $\pm$ 1,699 & +68,282 & 100\% \\
-M10000: Transformer-2L + MPPI & NeoRL simulator & -223,876 $\pm$ 1,033 & +64,535 & 100\% \\
+原始行为（数据集历史轨迹） & NeoRL 数据集历史轨迹 & -282,885 $\pm$ 1,197 & -- \\
+BC & NeoRL 仿真环境 & -288,411 $\pm$ 267 & 0 \\
+M100: GRU + CEM & NeoRL 仿真环境 & -274,181 $\pm$ 396 & +14,229 \\
+M1000: Transformer-2L + MPPI & NeoRL 仿真环境 & -220,129 $\pm$ 1,699 & +68,282 \\
+M10000: Transformer-2L + MPPI & NeoRL 仿真环境 & -223,876 $\pm$ 1,033 & +64,535 \\
 \bottomrule
 \end{tabular}}
 \end{table}

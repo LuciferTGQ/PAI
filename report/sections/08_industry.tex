@@ -1,13 +1,13 @@
-\subsection{Potential industrial applications}
+\subsection{潜在工业应用}
 
-World Model能够在不直接扰动设备的情况下回答``如果改变控制量，未来状态可能如何演化''。潜在用途包括工艺参数优化、能耗与设备疲劳联合控制、future-state prediction、what-if control simulation、数字孪生、控制策略预验证、异常工况决策辅助，以及生产目标与设备状态的联合优化。对于复杂生产线，它还可以作为operator的决策支持工具，在执行动作前展示多种候选方案的预测后果。
+世界模型能够在不直接扰动设备的情况下回答“如果改变控制量，未来状态可能如何演化”。潜在用途包括工艺参数优化、能耗与设备疲劳联合控制、未来状态预测、假设性控制仿真、数字孪生、控制策略预验证、异常工况决策辅助，以及生产目标与设备状态的联合优化。对于复杂生产线，世界模型还可以作为操作员的决策支持工具，在执行动作前比较多种候选方案的预测后果。
 
-\subsection{Deployment risks and safeguards}
+\subsection{实际部署中的风险与保障}
 
-真实工业数据比benchmark更复杂。Sensor noise、missing measurement、异常值和时间同步误差会直接污染30帧历史窗口；equipment aging、maintenance、生产配方和工况变化会造成dynamics drift；停机、故障与极端负载往往在offline data中极少出现，使模型在最重要的安全区域反而最不确定。部署前必须显式评估offline data coverage和out-of-distribution (OOD) operating conditions，而不能假设训练集大小足以代表所有未来状态。
+真实工业数据通常比基准数据更复杂。传感器噪声、测量缺失、异常值和时间同步误差会直接污染30帧历史窗口；设备老化、维护、生产配方和工况变化会导致动力学漂移；停机、故障与极端负载往往在离线数据中很少出现，使模型在重要安全区域反而最不确定。部署前需要评估离线数据覆盖范围和分布外（out-of-distribution, OOD）工况，不能仅以训练数据数量替代覆盖性分析。
 
-控制层还必须处理hard safety constraints、actuator rate/position limits、多目标权衡和operator intervention。例如，疲劳与能耗的reward并不能自动表达产品质量、产量、排放和设备安全的全部要求。实际系统应把这些要求编码为不可违反的约束，而不是只依赖软reward。Failure detection、fallback controller和人工接管路径需要与学习策略同时设计。
+控制层还必须处理硬安全约束、执行器位置与变化速率约束、多目标权衡和操作员干预。疲劳度与能耗构成的奖励不能自动表达产品质量、产量、排放和设备安全的全部要求，关键约束应作为不可违反的控制边界，而不只是软奖励。故障检测、回退控制器和人工接管路径需要与学习策略同时设计。
 
-本项目观察到的model exploitation尤其重要：实际部署不能允许optimizer无约束搜索World Model的高收益区域。更安全的方案应联合model uncertainty、ensemble disagreement、OOD detection、可信动作区域、conservative objective和安全过滤器。当不确定性超阈值时，系统应回退到经验证的BC、传统控制器或人工操作。部署流程宜先经历离线回放、shadow testing、受限工况试运行和逐级放权，并持续监控prediction residual、动作分布、reward decomposition与安全事件。
+本项目观察到的模型利用风险对工业部署尤为重要。实际系统不能允许优化器无约束地搜索世界模型中的高收益区域，而应结合模型不确定性、模型集合分歧、OOD 检测、可信动作区域、保守目标和安全过滤器。当不确定性超过阈值时，系统应回退到经过验证的 BC、传统控制器或人工操作。部署流程宜先经历离线回放、影子测试、受限工况试运行和逐级放权，并持续监测预测残差、动作分布、奖励组成和安全事件。
 
-模型更新同样需要治理。Continuous monitoring应识别dynamics drift；模型更新或online adaptation必须保留版本、数据窗口、验证记录和可回滚能力。对关键工业场景，还需考虑网络与算力故障、推理超时、传感器冗余、审计日志和责任边界。World Model的价值不是替代所有传统控制，而是在明确安全边界内增强预测、搜索和预验证能力。
+模型更新同样需要治理。持续监控应识别动力学漂移；模型更新或在线自适应需要保留版本、数据窗口、验证记录和回滚能力。关键工业场景还需要考虑网络与算力故障、推理超时、传感器冗余、审计日志和责任边界。世界模型的价值不是替代全部传统控制，而是在明确安全边界内增强预测、搜索和策略预验证能力。
