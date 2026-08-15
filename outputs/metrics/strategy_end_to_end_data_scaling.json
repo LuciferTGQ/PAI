@@ -1,0 +1,176 @@
+{
+  "metadata": {
+    "role": "held_out_end_to_end_world_model_data_scaling",
+    "seeds": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "episode_horizon": 1000,
+    "architecture_locked_from_m1000": "GRU",
+    "strategy_locked_from_m1000": "CEM_H10",
+    "official_bc_checkpoint_fixed_across_scales": "G:\\PAI\\outputs\\checkpoints\\official_bc_ib_m1000.pt",
+    "cem": {
+      "horizon": 10,
+      "population": 64,
+      "elites": 8,
+      "iterations": 2,
+      "initial_std": 0.35,
+      "min_std": 0.05,
+      "action_low": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "action_high": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "selection_or_tuning_on_these_seeds": false
+  },
+  "data_scales": {
+    "100": {
+      "episodes": {
+        "47": {
+          "return": -274618.03562748164,
+          "elapsed_seconds": 17.24325850000605,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -272257.57050650986,
+          "elapsed_seconds": 16.792174600064754,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -271959.0482005091,
+          "elapsed_seconds": 16.717135899933055,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -271696.34955850086,
+          "elapsed_seconds": 16.70135119999759,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -306007.22613456746,
+          "elapsed_seconds": 17.04274219996296,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "world_model_checkpoint": "outputs/checkpoints/world_model_ib_m100_gru_epoch_015.pt",
+      "returns": [
+        -274618.03562748164,
+        -272257.57050650986,
+        -271959.0482005091,
+        -271696.34955850086,
+        -306007.22613456746
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -279307.6460055138,
+        "std": 13390.274921831826,
+        "median": -272257.57050650986,
+        "min": -306007.22613456746,
+        "max": -271696.34955850086
+      },
+      "mean_episode_seconds": 16.899332479992882
+    },
+    "1000": {
+      "episodes": {
+        "47": {
+          "return": -268308.18425556796,
+          "elapsed_seconds": 16.943014400079846,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -268820.1793576515,
+          "elapsed_seconds": 16.825072099920362,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -267622.1557316093,
+          "elapsed_seconds": 16.98371860012412,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -269056.8689907432,
+          "elapsed_seconds": 16.774470699951053,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -267036.7958317073,
+          "elapsed_seconds": 16.89059379999526,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "returns": [
+        -268308.18425556796,
+        -268820.1793576515,
+        -267622.1557316093,
+        -269056.8689907432,
+        -267036.7958317073
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -268168.8368334559,
+        "std": 750.0190606920909,
+        "median": -268308.18425556796,
+        "min": -269056.8689907432,
+        "max": -267036.7958317073
+      },
+      "mean_episode_seconds": 16.88337392001413,
+      "reused_without_rerun": true,
+      "world_model_checkpoint": "outputs/checkpoints/world_model_ib_m1000_gru_best.pt"
+    },
+    "10000": {
+      "episodes": {
+        "47": {
+          "return": -268951.3655992532,
+          "elapsed_seconds": 16.78255519992672,
+          "clipped_action_fraction": 0.0
+        },
+        "48": {
+          "return": -268605.9365269977,
+          "elapsed_seconds": 16.811276899883524,
+          "clipped_action_fraction": 0.0
+        },
+        "49": {
+          "return": -267620.3294565595,
+          "elapsed_seconds": 16.891629199963063,
+          "clipped_action_fraction": 0.0
+        },
+        "50": {
+          "return": -267988.8547168249,
+          "elapsed_seconds": 17.107952600112185,
+          "clipped_action_fraction": 0.0
+        },
+        "51": {
+          "return": -268290.09657111554,
+          "elapsed_seconds": 17.60752539988607,
+          "clipped_action_fraction": 0.0
+        }
+      },
+      "world_model_checkpoint": "outputs/checkpoints/world_model_ib_m10000_gru_epoch_001.pt",
+      "returns": [
+        -268951.3655992532,
+        -268605.9365269977,
+        -267620.3294565595,
+        -267988.8547168249,
+        -268290.09657111554
+      ],
+      "summary": {
+        "episodes": 5,
+        "mean": -268291.3165741502,
+        "std": 463.973879822123,
+        "median": -268290.09657111554,
+        "min": -268951.3655992532,
+        "max": -267620.3294565595
+      },
+      "mean_episode_seconds": 17.04018785995431
+    }
+  }
+}

@@ -3,6 +3,7 @@ tmp/
 external/
 data/raw/
 data/processed/
+data/cache/
 outputs/checkpoints/
 outputs/logs/
 __pycache__/
@@ -18,4 +19,3 @@ __pycache__/
 .env
 .env.*
 !.env.example
-

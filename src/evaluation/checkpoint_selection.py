@@ -73,7 +73,9 @@ def _one_step_nrmse(
     world_model: FrozenWorldModel,
     val_data: Dict[str, np.ndarray],
     batch_size: int,
+    nrmse_std: np.ndarray | None = None,
 ) -> float:
+    denominator = world_model.stats.target_std if nrmse_std is None else nrmse_std
     squared_normalized_errors = []
     for start in range(0, len(val_data["obs"]), batch_size):
         stop = min(start + batch_size, len(val_data["obs"]))
@@ -82,7 +84,7 @@ def _one_step_nrmse(
         )
         actual = val_data["next_obs"][start:stop, : world_model.frame_dim]
         squared_normalized_errors.append(
-            np.square((predicted - actual) / world_model.stats.target_std)
+            np.square((predicted - actual) / denominator)
         )
     return float(np.sqrt(np.concatenate(squared_normalized_errors).mean()))
 
@@ -93,6 +95,8 @@ def _multi_step_nrmse(
     horizons: Iterable[int],
     stride: int,
     batch_size: int,
+    max_rollout_starts: int | None = None,
+    nrmse_std: np.ndarray | None = None,
 ) -> tuple[Dict[int, float], int]:
     horizons = tuple(sorted(int(value) for value in horizons))
     max_horizon = max(horizons)
@@ -107,7 +111,11 @@ def _multi_step_nrmse(
     )
     if starts.size == 0:
         raise ValueError("No valid multi-step validation starts")
+    if max_rollout_starts is not None and len(starts) > max_rollout_starts:
+        positions = np.linspace(0, len(starts) - 1, max_rollout_starts, dtype=np.int64)
+        starts = starts[positions]
     squared_errors: Dict[int, list[np.ndarray]] = {horizon: [] for horizon in horizons}
+    denominator = world_model.stats.target_std if nrmse_std is None else nrmse_std
     for batch_start in range(0, len(starts), batch_size):
         indices = starts[batch_start : batch_start + batch_size]
         histories = val_data["obs"][indices].copy()
@@ -119,7 +127,7 @@ def _multi_step_nrmse(
             if horizon in squared_errors:
                 actual = val_data["next_obs"][indices + step, : world_model.frame_dim]
                 squared_errors[horizon].append(
-                    np.square((predicted - actual) / world_model.stats.target_std)
+                    np.square((predicted - actual) / denominator)
                 )
             histories = np.concatenate(
                 (predicted, histories[:, : -world_model.frame_dim]), axis=1
@@ -139,13 +147,21 @@ def evaluate_checkpoint(
     device: str,
     batch_size: int,
     rollout_stride: int,
+    max_rollout_starts: int | None = None,
+    nrmse_std: np.ndarray | None = None,
 ) -> Dict[str, Any]:
     started = time.perf_counter()
     metadata = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     world_model = FrozenWorldModel(checkpoint_path, device=device)
-    one_step = _one_step_nrmse(world_model, val_data, batch_size)
+    one_step = _one_step_nrmse(world_model, val_data, batch_size, nrmse_std)
     multi_step, rollout_starts = _multi_step_nrmse(
-        world_model, val_data, ROLLOUT_HORIZONS, rollout_stride, batch_size
+        world_model,
+        val_data,
+        ROLLOUT_HORIZONS,
+        rollout_stride,
+        batch_size,
+        max_rollout_starts,
+        nrmse_std,
     )
     parameter_count = int(
         metadata.get(

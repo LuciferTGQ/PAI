@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import yaml
+from types import SimpleNamespace
 
 from src.world_model.model import (
     MLPWorldModel,
@@ -10,6 +11,7 @@ from src.world_model.model import (
 )
 from src.world_model.trainer import train_from_config
 from src.evaluation.checkpoint_selection import select_by_validation_protocol
+from src.evaluation.checkpoint_selection import _one_step_nrmse
 
 
 def test_temporal_transformer_shape() -> None:
@@ -149,3 +151,27 @@ def test_latest_first_history_update() -> None:
     updated = np.concatenate((next_frame, history[:-6]))
     assert np.array_equal(updated[:6], next_frame)
     assert np.array_equal(updated[6:], history[:-6])
+
+
+def test_common_nrmse_denominator_can_be_fixed_across_models() -> None:
+    class FakeWorldModel:
+        frame_dim = 6
+        stats = SimpleNamespace(target_std=np.full(6, 2.0, dtype=np.float32))
+
+        def predict_next_frame(self, observations, actions):
+            return np.zeros((len(observations), 6), dtype=np.float32)
+
+    validation = {
+        "obs": np.zeros((4, 180), dtype=np.float32),
+        "action": np.zeros((4, 3), dtype=np.float32),
+        "next_obs": np.ones((4, 180), dtype=np.float32),
+    }
+    model_scaled = _one_step_nrmse(FakeWorldModel(), validation, batch_size=2)
+    fixed_scaled = _one_step_nrmse(
+        FakeWorldModel(),
+        validation,
+        batch_size=2,
+        nrmse_std=np.ones(6, dtype=np.float32),
+    )
+    assert model_scaled == 0.5
+    assert fixed_scaled == 1.0

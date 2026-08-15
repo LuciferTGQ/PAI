@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import csv
+import json
 import random
 import time
 from pathlib import Path
@@ -26,6 +27,29 @@ from src.data.ib_dataset import (
 from src.utils.config import load_config, resolve_path
 from src.utils.seed import seed_everything
 from src.world_model.model import build_world_model
+
+
+def _data_fingerprint(path: Path) -> Dict[str, Any]:
+    path = path.resolve()
+    files = [path] if path.is_file() else sorted(path.glob("*.npy"))
+    return {
+        "path": str(path),
+        "files": [
+            {
+                "name": file.name,
+                "size": file.stat().st_size,
+                "mtime_ns": file.stat().st_mtime_ns,
+            }
+            for file in files
+        ],
+    }
+
+
+def _write_json_atomic(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(f"{path.suffix}.tmp")
+    temporary.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    temporary.replace(path)
 
 
 def _select_device(requested: str) -> torch.device:
@@ -197,10 +221,45 @@ def train_from_config(
     data_cfg = config["data"]
     model_cfg = config["model"]
     output_cfg = config["outputs"]
-    train_data = load_ib_npz(resolve_path(project_root, data_cfg["train_path"]))
-    val_data = load_ib_npz(resolve_path(project_root, data_cfg["val_path"]))
-    print("train_audit", validate_ib_semantics(train_data, data_cfg["history_len"], data_cfg["frame_dim"]))
-    print("val_audit", validate_ib_semantics(val_data, data_cfg["history_len"], data_cfg["frame_dim"]))
+    train_path = resolve_path(project_root, data_cfg["train_path"])
+    val_path = resolve_path(project_root, data_cfg["val_path"])
+    train_fingerprint = _data_fingerprint(train_path)
+    val_fingerprint = _data_fingerprint(val_path)
+    train_data = load_ib_npz(train_path)
+    val_data = load_ib_npz(val_path)
+    audit_cache_value = data_cfg.get("audit_cache")
+    audit_cache = resolve_path(project_root, audit_cache_value) if audit_cache_value else None
+    cached_audit = None
+    if audit_cache is not None and audit_cache.exists():
+        candidate = json.loads(audit_cache.read_text(encoding="utf-8"))
+        if (
+            candidate.get("train_fingerprint") == train_fingerprint
+            and candidate.get("val_fingerprint") == val_fingerprint
+        ):
+            cached_audit = candidate
+    if cached_audit is None:
+        train_audit = validate_ib_semantics(
+            train_data, data_cfg["history_len"], data_cfg["frame_dim"]
+        )
+        val_audit = validate_ib_semantics(
+            val_data, data_cfg["history_len"], data_cfg["frame_dim"]
+        )
+        if audit_cache is not None:
+            _write_json_atomic(
+                audit_cache,
+                {
+                    "train_fingerprint": train_fingerprint,
+                    "val_fingerprint": val_fingerprint,
+                    "train_audit": train_audit,
+                    "val_audit": val_audit,
+                },
+            )
+    else:
+        train_audit = cached_audit["train_audit"]
+        val_audit = cached_audit["val_audit"]
+        print(f"reuse_data_audit={audit_cache}")
+    print("train_audit", train_audit)
+    print("val_audit", val_audit)
 
     resume_checkpoint = None
     if resume_path is not None:
@@ -211,10 +270,36 @@ def train_from_config(
             raise ValueError(f"Checkpoint cannot resume; missing keys: {sorted(missing)}")
         stats = NormalizationStats.from_dict(resume_checkpoint["normalization"])
     else:
-        stats = compute_normalization(train_data, data_cfg["history_len"], data_cfg["frame_dim"])
+        normalization_cache_value = data_cfg.get("normalization_cache")
+        normalization_cache = (
+            resolve_path(project_root, normalization_cache_value)
+            if normalization_cache_value
+            else None
+        )
+        cached_normalization = None
+        if normalization_cache is not None and normalization_cache.exists():
+            candidate = json.loads(normalization_cache.read_text(encoding="utf-8"))
+            if candidate.get("train_fingerprint") == train_fingerprint:
+                cached_normalization = candidate
+        if cached_normalization is not None:
+            stats = NormalizationStats.from_dict(cached_normalization["normalization"])
+            print(f"reuse_normalization={normalization_cache}")
+        else:
+            stats = compute_normalization(
+                train_data, data_cfg["history_len"], data_cfg["frame_dim"]
+            )
+            if normalization_cache is not None:
+                _write_json_atomic(
+                    normalization_cache,
+                    {
+                        "train_fingerprint": train_fingerprint,
+                        "normalization": stats.to_dict(),
+                    },
+                )
 
     train_dataset = IBTransitionDataset(train_data, stats, data_cfg["history_len"], data_cfg["frame_dim"])
     val_dataset = IBTransitionDataset(val_data, stats, data_cfg["history_len"], data_cfg["frame_dim"])
+    del train_data, val_data
     generator = torch.Generator().manual_seed(int(config["seed"]))
     train_loader = DataLoader(
         train_dataset,

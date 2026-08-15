@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 
 
 REQUIRED_KEYS = ("obs", "next_obs", "action", "reward", "done", "index")
+STREAMING_CHUNK_SIZE = 100_000
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,14 @@ def load_ib_npz(path: str | Path) -> Dict[str, np.ndarray]:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"NeoRL dataset not found: {path}")
+    if path.is_dir():
+        missing = [key for key in REQUIRED_KEYS if not (path / f"{key}.npy").exists()]
+        if missing:
+            raise ValueError(f"Memory-mapped dataset {path} is missing keys: {missing}")
+        return {
+            key: np.load(path / f"{key}.npy", mmap_mode="c")
+            for key in REQUIRED_KEYS
+        }
     with np.load(path) as archive:
         missing = set(REQUIRED_KEYS) - set(archive.files)
         if missing:
@@ -86,36 +95,82 @@ def validate_ib_semantics(
         raise ValueError("obs and next_obs shapes differ")
     if data["action"].shape != (n, 3):
         raise ValueError(f"Expected action shape ({n}, 3), got {data['action'].shape}")
-    if not np.array_equal(data["next_obs"][:, frame_dim:], data["obs"][:, :-frame_dim]):
-        raise ValueError("Released data does not obey the verified sliding-window update")
+    for start in range(0, n, STREAMING_CHUNK_SIZE):
+        stop = min(start + STREAMING_CHUNK_SIZE, n)
+        if not np.array_equal(
+            data["next_obs"][start:stop, frame_dim:],
+            data["obs"][start:stop, :-frame_dim],
+        ):
+            raise ValueError("Released data does not obey the verified sliding-window update")
 
     spans = trajectory_spans(data["index"], n)
     lengths = spans[:, 1] - spans[:, 0]
-    reward_expected = -(3.0 * data["next_obs"][:, 4] + data["next_obs"][:, 5])
-    reward_error = np.abs(reward_expected - data["reward"].reshape(-1))
+    max_reward_error = 0.0
+    action_min = np.full(3, np.inf, dtype=np.float64)
+    action_max = np.full(3, -np.inf, dtype=np.float64)
+    for start in range(0, n, STREAMING_CHUNK_SIZE):
+        stop = min(start + STREAMING_CHUNK_SIZE, n)
+        reward_expected = -(
+            3.0 * data["next_obs"][start:stop, 4]
+            + data["next_obs"][start:stop, 5]
+        )
+        reward_error = np.abs(
+            reward_expected - data["reward"][start:stop].reshape(-1)
+        )
+        max_reward_error = max(max_reward_error, float(reward_error.max()))
+        action_chunk = data["action"][start:stop]
+        action_min = np.minimum(action_min, action_chunk.min(axis=0))
+        action_max = np.maximum(action_max, action_chunk.max(axis=0))
     return {
         "transitions": n,
         "trajectories": len(spans),
         "trajectory_lengths": sorted(np.unique(lengths).tolist()),
-        "max_reward_abs_error": float(reward_error.max()),
-        "action_min": data["action"].min(axis=0).tolist(),
-        "action_max": data["action"].max(axis=0).tolist(),
+        "max_reward_abs_error": max_reward_error,
+        "action_min": action_min.tolist(),
+        "action_max": action_max.tolist(),
     }
 
 
 def compute_normalization(
     train_data: Dict[str, np.ndarray], history_len: int = 30, frame_dim: int = 6
 ) -> NormalizationStats:
-    frames = train_data["obs"].reshape(-1, history_len, frame_dim)
-    actions = train_data["action"]
-    targets = train_data["next_obs"][:, :frame_dim]
+    def moments(
+        values: np.ndarray, output_dim: int, reshape_frames: bool = False
+    ) -> tuple[np.ndarray, np.ndarray]:
+        total = np.zeros(output_dim, dtype=np.float64)
+        squared_total = np.zeros(output_dim, dtype=np.float64)
+        count = 0
+        for start in range(0, len(values), STREAMING_CHUNK_SIZE):
+            stop = min(start + STREAMING_CHUNK_SIZE, len(values))
+            chunk = values[start:stop]
+            if reshape_frames:
+                chunk = chunk.reshape(-1, history_len, frame_dim)
+                axes = (0, 1)
+                chunk_count = len(chunk) * history_len
+            else:
+                axes = 0
+                chunk_count = len(chunk)
+            total += np.sum(chunk, axis=axes, dtype=np.float64)
+            squared_total += np.sum(
+                np.square(chunk, dtype=np.float64), axis=axes, dtype=np.float64
+            )
+            count += chunk_count
+        mean = total / count
+        variance = np.maximum(squared_total / count - np.square(mean), 0.0)
+        std = np.sqrt(variance)
+        std = np.where(std < 1e-6, 1.0, std)
+        return mean.astype(np.float32), std.astype(np.float32)
+
+    frame_mean, frame_std = moments(train_data["obs"], frame_dim, reshape_frames=True)
+    action_mean, action_std = moments(train_data["action"], 3)
+    target_mean, target_std = moments(train_data["next_obs"][:, :frame_dim], frame_dim)
     return NormalizationStats(
-        frame_mean=frames.astype(np.float64).mean(axis=(0, 1)).astype(np.float32),
-        frame_std=_safe_std(frames, (0, 1)),
-        action_mean=actions.astype(np.float64).mean(axis=0).astype(np.float32),
-        action_std=_safe_std(actions, (0,)),
-        target_mean=targets.astype(np.float64).mean(axis=0).astype(np.float32),
-        target_std=_safe_std(targets, (0,)),
+        frame_mean=frame_mean,
+        frame_std=frame_std,
+        action_mean=action_mean,
+        action_std=action_std,
+        target_mean=target_mean,
+        target_std=target_std,
     )
 
 
