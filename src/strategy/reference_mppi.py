@@ -10,7 +10,7 @@ try:
 except ImportError as error:  # pragma: no cover
     raise ImportError(
         "Reference MPPI requires pytorch-mppi==0.9.1; "
-        "install requirements-planners.txt"
+        "install dependencies with: pip install -r requirements.txt"
     ) from error
 
 from src.world_model.interface import FrozenWorldModel

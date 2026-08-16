@@ -7,15 +7,15 @@
 ## 主要成果
 
 - 完成 MLP、GRU、LSTM、Transformer-2L、Transformer-4L 在 M100、M1000、M10000 上的统一 `5 × 3` 比较。
-- 世界模型使用 validation-only protocol 选择，不使用 simulator reward 反向挑选模型。
+- 世界模型依据统一验证中的单步和多步预测指标进行选择，仿真奖励不参与世界模型选择。
 - 比较 CEM、iCEM、MPPI 与 MB-PPO；规划长度消融在固定 M1000 GRU 和 CEM 参数下比较 `H=5/10/20`，最终采用 `H=10`。
-- 最终 fresh seeds 100–109 的 1000-step NeoRL simulator 结果如下（奖励越高越好）：
+- 最终系统在10组未参与模型和策略选择的独立随机初始条件下进行1000-step NeoRL simulator 评价，结果如下（奖励越高越好）：
 
-| 数据规模 | 最终系统 | Episode return（mean ± std） | 相对 BC | Win rate |
-|---|---|---:|---:|---:|
-| M100 | GRU + CEM | -274,181 ± 396 | +14,229 | 100% |
-| M1000 | Transformer-2L + MPPI | -220,129 ± 1,699 | +68,282 | 100% |
-| M10000 | Transformer-2L + MPPI | -223,876 ± 1,033 | +64,535 | 100% |
+| 数据规模 | 最终系统 | Episode return（mean ± std） | 相对 BC |
+|---|---|---:|---:|
+| M100 | GRU + CEM | -274,181 ± 396 | +14,229 |
+| M1000 | Transformer-2L + MPPI | -220,129 ± 1,699 | +68,282 |
+| M10000 | Transformer-2L + MPPI | -223,876 ± 1,033 | +64,535 |
 
 上述数值来自 [`outputs/metrics/final_selected_systems_fresh_seeds_summary.csv`](outputs/metrics/final_selected_systems_fresh_seeds_summary.csv)。
 
@@ -29,7 +29,15 @@
 
 原始数据不提交到 GitHub。文件命名、放置目录和 M10000 memory-map 准备方法见 [`data/README.md`](data/README.md)。
 
-固定 NeoRL 源码位于 `external/NeoRL` 后，可分别下载并导出三种规模的数据：
+先获取固定版本的 NeoRL 源码并安装项目依赖：
+
+```powershell
+git clone https://github.com/polixir/NeoRL.git external/NeoRL
+git -C external/NeoRL checkout 717c9a92d5253876f8cb28318ef72e3d5ab05968
+pip install -r requirements.txt
+```
+
+随后可分别下载并导出三种规模的数据：
 
 ```powershell
 python scripts/download_neorl_data.py --scale 100
@@ -50,7 +58,7 @@ history [B, 30, 6] + action [B, 3] -> next_frame [B, 6]
 
 六个状态变量为 setpoint、velocity、gain、shift、fatigue、consumption。模型评价同时包含 one-step NRMSE 和 H5/H10/H20/H50 递归预测误差。`Hk` 指第 k 个递归预测时刻的误差，并非前 k 步误差的算术和。
 
-模型选择规则为：先保留 `one-step NRMSE <= 1.10 × 最优 one-step NRMSE` 的候选，再在候选中最小化 `mean(H5,H10,H20)`；H50仅用于长期稳定性诊断。
+模型选择规则为：先保留 `one-step NRMSE <= 1.10 × 最优 one-step NRMSE` 的候选，再在候选中最小化 `mean(H5,H10,H20)`；同时参考 H50 观察更长时域下的递归稳定性。
 
 ## 策略优化
 
@@ -67,7 +75,7 @@ Horizon 消融使用 CEM 作为代表性规划器，固定 M1000 GRU、populatio
 | **10** | **-269,374 ± 487** | **-269,072** |
 | 20 | -272,618 ± 490 | -272,625 |
 
-H=10 的平均回报最高，且是 one-standard-error rule 下唯一候选，因此用于 CEM、iCEM、MPPI；MB-PPO 同样使用 10-step imagined rollout，但其含义是训练阶段的模型内轨迹，而不是滚动时域规划。
+在固定 M1000 GRU 世界模型和其余 CEM 参数的条件下，H=10 的平均累计奖励最高，因此后续 CEM、iCEM 和 MPPI 统一采用 10 步规划长度。MB-PPO 同样使用 10-step imagined rollout，但其含义是训练阶段的模型内轨迹，而不是滚动时域规划。
 
 ## 项目结构
 
@@ -93,7 +101,7 @@ tests/             轻量单元测试与训练 smoke test
 | World Model 训练与 resume | [`src/world_model/trainer.py`](src/world_model/trainer.py) |
 | 冻结 World Model 接口 | [`src/world_model/interface.py`](src/world_model/interface.py) |
 | 单步与多步递归评价 | [`src/evaluation/checkpoint_selection.py`](src/evaluation/checkpoint_selection.py) |
-| Validation-only checkpoint 选择 | [`src/evaluation/checkpoint_selection.py`](src/evaluation/checkpoint_selection.py) |
+| 统一验证下的 checkpoint 选择 | [`src/evaluation/checkpoint_selection.py`](src/evaluation/checkpoint_selection.py) |
 | CEM | [`src/strategy/cem_mpc.py`](src/strategy/cem_mpc.py) |
 | iCEM | [`src/strategy/icem_mpc.py`](src/strategy/icem_mpc.py) |
 | MPPI | [`src/strategy/reference_mppi.py`](src/strategy/reference_mppi.py) |
@@ -114,11 +122,11 @@ tests/             轻量单元测试与训练 smoke test
 | NeoRL 数据下载与导出 | `scripts/download_neorl_data.py` |
 | 单个 World Model 训练 | `scripts/train_world_model.py` |
 | `5 × 3` World Model 训练 | `scripts/run_world_model_matrix.py` |
-| 统一 common-validation 评价 | `scripts/evaluate_world_model_5x3.py` |
+| 统一验证评价 | `scripts/evaluate_world_model_5x3.py` |
 | Horizon 消融 | `scripts/evaluate_cem_horizons.py` |
 | `3 × 4` Strategy Matrix | `scripts/run_main_system_matrix.py` |
 | World Model × Strategy | `scripts/run_world_model_control_cross.py` |
-| Final fresh-seed evaluation | `scripts/run_final_selected_systems.py` |
+| 最终仿真评价 | `scripts/run_final_selected_systems.py` |
 
 所有入口均从 `configs/` 读取参数；训练支持 checkpoint resume。原始数据和模型 checkpoint 不上传，已有正式 CSV/JSON 与最终报告可以直接阅读，不依赖重新运行实验。
 
@@ -127,7 +135,7 @@ tests/             轻量单元测试与训练 smoke test
 - 世界模型完整指标：`outputs/metrics/world_model_5x3_common_validation*`
 - Strategy Matrix：`outputs/metrics/main_system_matrix_development*`
 - World Model × Strategy：`outputs/metrics/world_model_control_cross_m1000*`
-- Final fresh-seed evaluation：`outputs/metrics/final_selected_systems_fresh_seeds*`
+- 最终仿真评价：`outputs/metrics/final_selected_systems_fresh_seeds*`
 - 最终 PDF：[`output/pdf/pai_industrial_world_model_report.pdf`](output/pdf/pai_industrial_world_model_report.pdf)
 - LaTeX 与统一图表源：[`report/`](report/)
 

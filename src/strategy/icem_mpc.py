@@ -9,7 +9,7 @@ try:
 except ImportError as error:  # pragma: no cover - exercised by deployment environments
     raise ImportError(
         "Official iCEM noise requires colorednoise==2.2.0; "
-        "install requirements-planners.txt"
+        "install dependencies with: pip install -r requirements.txt"
     ) from error
 
 from src.strategy.cem_mpc import CEMMPCPolicy

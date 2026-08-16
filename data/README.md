@@ -25,11 +25,19 @@ data/raw/ib-medium-10000-train.npz
 data/raw/ib-medium-1000-val.npz
 ```
 
-不同训练规模使用相互对应的 validation set；所有正式架构比较在同一数据规模内共享相同数据划分和 normalization。
+不同训练规模使用相互对应的 validation set；所有正式架构比较在同一数据规模内共享相同数据划分和 normalization。训练阶段各数据规模使用对应的验证集；在最终5×3世界模型横向比较中，所有候选模型统一使用 `data/raw/ib-medium-1000-val.npz`，并采用相同的 NRMSE 归一化尺度重新计算预测指标，以保证不同架构和数据规模之间可以直接比较。
 
 ## 下载与导出
 
-先将固定版本的 NeoRL 源码放到 `external/NeoRL`，再分别执行：
+先获取固定版本的 NeoRL 源码并安装项目依赖：
+
+```powershell
+git clone https://github.com/polixir/NeoRL.git external/NeoRL
+git -C external/NeoRL checkout 717c9a92d5253876f8cb28318ef72e3d5ab05968
+pip install -r requirements.txt
+```
+
+再分别执行：
 
 ```powershell
 python scripts/download_neorl_data.py --scale 100
